@@ -58,14 +58,14 @@ function toBytes(value: unknown): Uint8Array {
   return new Uint8Array()
 }
 
-async function withRetry<T>(operation: () => Promise<T>, attempts = 3): Promise<T> {
+async function withRetry<T>(operation: () => Promise<T>, attempts = 5): Promise<T> {
   let lastError: unknown
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       return await operation()
     } catch (error) {
       lastError = error
-      if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)))
+      if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)))
     }
   }
   throw lastError
@@ -175,29 +175,69 @@ export async function getStudyCategories(): Promise<StudyCategory[]> {
         FROM study_categories c
         ORDER BY c.created_at DESC
       `)
+      const categoryIds = categoriesResult.rows.map((row) => String(row.id ?? ''))
+
+      // Load all modules and all questions in parallel (2 batches instead of N+1 sequential)
+      const [modulesResults, questionsResults] = await Promise.all([
+        Promise.all(
+          categoryIds.map((id) =>
+            db().execute({
+              sql: 'SELECT id, category_id, title, description, file_url, file_name, created_at FROM study_modules WHERE category_id = ? ORDER BY id DESC',
+              args: [id],
+            })
+          )
+        ),
+        Promise.all(
+          categoryIds.map((id) =>
+            db().execute({
+              sql: 'SELECT id, category_id, question, options_json, correct_answer, position, created_at FROM study_category_questions WHERE category_id = ? ORDER BY position ASC, created_at ASC',
+              args: [id],
+            })
+          )
+        ),
+      ])
+
+      // Build lookup maps keyed by category id
+      const modulesByCategory = new Map<string, StudyModule[]>()
+      const questionsByCategory = new Map<string, CategoryQuestion[]>()
+
+      categoryIds.forEach((id, idx) => {
+        modulesByCategory.set(
+          id,
+          modulesResults[idx].rows.map((row) => ({
+            id: toNumber(row.id),
+            categoryId: row.category_id === null || row.category_id === undefined ? null : String(row.category_id),
+            title: String(row.title ?? ''),
+            description: String(row.description ?? ''),
+            fileUrl: row.file_url === null || row.file_url === undefined ? null : String(row.file_url),
+            fileName: row.file_name === null || row.file_name === undefined ? null : String(row.file_name),
+            createdAt: String(row.created_at ?? ''),
+          }))
+        )
+
+        questionsByCategory.set(
+          id,
+          questionsResults[idx].rows.map((qrow) => ({
+            id: String(qrow.id ?? ''),
+            categoryId: String(qrow.category_id ?? ''),
+            question: String(qrow.question ?? ''),
+            options: JSON.parse(String(qrow.options_json ?? '[]')),
+            correctAnswer: String(qrow.correct_answer ?? ''),
+            position: toNumber(qrow.position),
+            createdAt: String(qrow.created_at ?? ''),
+          }))
+        )
+      })
+
       const categories: StudyCategory[] = []
       for (const row of categoriesResult.rows) {
         const id = String(row.id ?? '')
-        const modules = await getStudyModulesByCategory(id)
-        const questionsResult = await db().execute({
-          sql: 'SELECT id, category_id, question, options_json, correct_answer, position, created_at FROM study_category_questions WHERE category_id = ? ORDER BY position ASC, created_at ASC',
-          args: [id],
-        })
-        const questions = questionsResult.rows.map((qrow) => ({
-          id: String(qrow.id ?? ''),
-          categoryId: String(qrow.category_id ?? ''),
-          question: String(qrow.question ?? ''),
-          options: JSON.parse(String(qrow.options_json ?? '[]')),
-          correctAnswer: String(qrow.correct_answer ?? ''),
-          position: toNumber(qrow.position),
-          createdAt: String(qrow.created_at ?? ''),
-        }))
         categories.push({
           id,
           title: String(row.title ?? ''),
           description: row.description === null || row.description === undefined ? null : String(row.description),
-          modules,
-          questions,
+          modules: modulesByCategory.get(id) ?? [],
+          questions: questionsByCategory.get(id) ?? [],
           createdAt: String(row.created_at ?? ''),
           updatedAt: String(row.updated_at ?? ''),
         })
@@ -392,17 +432,20 @@ export async function getLearnerAccess(email: string): Promise<LearnerAccess | n
   try {
     return await withRetry(async () => {
       await ensureAccessTables()
-      const accessResult = await db().execute({
-        sql: 'SELECT email, name, plan, restricted, restricted_at, created_at, updated_at FROM learner_access WHERE email = ?',
-        args: [email],
-      })
+      // Run both queries in parallel instead of sequentially
+      const [accessResult, deviceResult] = await Promise.all([
+        db().execute({
+          sql: 'SELECT email, name, plan, restricted, restricted_at, created_at, updated_at FROM learner_access WHERE email = ?',
+          args: [email],
+        }),
+        db().execute({
+          sql: 'SELECT device_id, label, user_agent, first_seen, last_seen FROM learner_devices WHERE email = ? ORDER BY last_seen DESC',
+          args: [email],
+        }),
+      ])
+
       const row = accessResult.rows[0]
       if (!row) return null
-
-      const deviceResult = await db().execute({
-        sql: 'SELECT device_id, label, user_agent, first_seen, last_seen FROM learner_devices WHERE email = ? ORDER BY last_seen DESC',
-        args: [email],
-      })
 
       const devices: LearnerDevice[] = deviceResult.rows.map((device) => ({
         deviceId: String(device.device_id ?? ''),
@@ -485,14 +528,17 @@ export async function getTrackedLearners(): Promise<LearnerAccess[]> {
   try {
     return await withRetry(async () => {
       await ensureAccessTables()
-      const accessResult = await db().execute(
-        'SELECT email, name, plan, restricted, restricted_at, created_at, updated_at FROM learner_access ORDER BY updated_at DESC, email ASC LIMIT 200',
-      )
-      if (accessResult.rows.length === 0) return []
+      // Run both queries in parallel instead of sequentially
+      const [accessResult, deviceResult] = await Promise.all([
+        db().execute(
+          'SELECT email, name, plan, restricted, restricted_at, created_at, updated_at FROM learner_access ORDER BY updated_at DESC, email ASC LIMIT 200'
+        ),
+        db().execute(
+          'SELECT email, device_id, label, user_agent, first_seen, last_seen FROM learner_devices ORDER BY last_seen DESC LIMIT 1000'
+        ),
+      ])
 
-      const deviceResult = await db().execute(
-        'SELECT email, device_id, label, user_agent, first_seen, last_seen FROM learner_devices ORDER BY last_seen DESC LIMIT 1000',
-      )
+      if (accessResult.rows.length === 0) return []
 
       const devicesByEmail = new Map<string, LearnerDevice[]>()
       for (const device of deviceResult.rows) {
@@ -582,6 +628,42 @@ async function ensureMockTables() {
     created_at TEXT NOT NULL
   )`)
   mockTablesReady = true
+}
+
+export async function getMockTestById(id: string): Promise<{
+  id: string
+  title: string
+  description: string
+  fileName: string
+  questionCount: number
+  timeLimitMin: number | null
+  passMark: number
+  createdAt: string
+} | null> {
+  try {
+    return await withRetry(async () => {
+      await ensureMockTables()
+      const result = await db().execute({
+        sql: 'SELECT id, title, description, file_name, question_count, time_limit_min, pass_mark, created_at FROM mock_tests WHERE id = ?',
+        args: [id],
+      })
+      const row = result.rows[0]
+      if (!row) return null
+      return {
+        id: String(row.id ?? ''),
+        title: String(row.title ?? ''),
+        description: String(row.description ?? ''),
+        fileName: String(row.file_name ?? ''),
+        questionCount: toNumber(row.question_count),
+        timeLimitMin: row.time_limit_min === null ? null : toNumber(row.time_limit_min),
+        passMark: toNumber(row.pass_mark),
+        createdAt: String(row.created_at ?? ''),
+      }
+    })
+  } catch (error) {
+    console.error(`Could not load mock test ${id}:`, error)
+    return null
+  }
 }
 
 export async function getMockTests(): Promise<SavedMockTest[]> {

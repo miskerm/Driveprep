@@ -344,6 +344,32 @@ const migrations: Migration[] = [
       await db().execute('CREATE INDEX IF NOT EXISTS study_modules_file_url_idx ON study_modules (file_url)')
     },
   },
+  {
+    version: 8,
+    name: 'make-mock-questions-module-difficulty-nullable',
+    up: async () => {
+      // SQLite doesn't support ALTER COLUMN, so recreate the table without NOT NULL on module/difficulty
+      const columns = await tableColumns('mock_questions')
+      if (columns.has('module') && columns.get('module')?.notnull) {
+        await db().execute(`CREATE TABLE mock_questions_new (
+          id TEXT PRIMARY KEY,
+          mock_test_id TEXT NOT NULL,
+          position INTEGER NOT NULL,
+          question TEXT NOT NULL,
+          options_json TEXT NOT NULL,
+          correct_answer TEXT NOT NULL,
+          explanation TEXT NOT NULL,
+          module TEXT,
+          difficulty TEXT,
+          created_at TEXT NOT NULL
+        )`)
+        await db().execute(`INSERT INTO mock_questions_new (id, mock_test_id, position, question, options_json, correct_answer, explanation, module, difficulty, created_at)
+          SELECT id, mock_test_id, position, question, options_json, correct_answer, explanation, module, difficulty, created_at FROM mock_questions`)
+        await db().execute('DROP TABLE mock_questions')
+        await db().execute('ALTER TABLE mock_questions_new RENAME TO mock_questions')
+      }
+    },
+  },
 ]
 
 async function seedAdminAccount() {

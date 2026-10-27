@@ -149,7 +149,7 @@ export function Dashboard() {
             action={access?.restricted ? 'Premium restricted' : premium ? 'Start Mock Test' : 'Unlock with Premium'}
             icon={ClipboardList}
             tone="coral"
-            href={premium ? '/full-mock' : paymentHref}
+            href={premium ? '/mock-tests' : paymentHref}
           />
           <Feature
             title="Quick Quiz"
