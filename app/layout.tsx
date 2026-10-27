@@ -26,6 +26,39 @@ export const metadata: Metadata = {
   },
 }
 
+// React's development-only RSC performance tracks measure server components
+// that redirect after an await. The `end` timestamp can be negative because it
+// mixes the server debug clock with the browser time origin, which makes
+// Chromium throw inside performance.measure and breaks the Next.js dev overlay.
+// Clamp invalid timestamps so development stays usable.
+// Upstream: https://github.com/facebook/react/issues/37561
+//           https://github.com/vercel/next.js/issues/99032
+const measureGuard = `(function () {
+  if (typeof performance === 'undefined') return;
+  if (typeof performance.measure !== 'function') return;
+  if (performance.__drivoprepMeasureGuard) return;
+  performance.__drivoprepMeasureGuard = true;
+  var original = performance.measure.bind(performance);
+  performance.measure = function (name, options) {
+    if (options && typeof options === 'object' && !Array.isArray(options)) {
+      var patched = Object.assign({}, options);
+      var start = patched.start;
+      var end = patched.end;
+      if (typeof start === 'number' && (!isFinite(start) || start < 0)) start = 0;
+      if (typeof end === 'number' && (!isFinite(end) || end < 0)) {
+        end = typeof start === 'number' ? start : 0;
+      }
+      if (typeof start === 'number' && typeof end === 'number' && end < start) {
+        end = start;
+      }
+      patched.start = start;
+      patched.end = end;
+      return original(name, patched);
+    }
+    return original.apply(null, arguments);
+  };
+})();`
+
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
@@ -42,6 +75,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        {process.env.NODE_ENV === 'development' && (
+          <script dangerouslySetInnerHTML={{ __html: measureGuard }} />
+        )}
         <Providers>{children}</Providers>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

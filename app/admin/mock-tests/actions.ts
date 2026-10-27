@@ -94,8 +94,6 @@ function parseQuestions(raw: FormDataEntryValue | null): ParsedMockQuestion[] | 
         options,
         correct,
         explanation: String(entry.explanation ?? '').trim(),
-        module: String(entry.module ?? '').trim(),
-        difficulty: String(entry.difficulty ?? '').trim(),
       })
     }
 

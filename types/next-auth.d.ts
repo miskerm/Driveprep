@@ -6,6 +6,7 @@ declare module 'next-auth' {
     role?: UserRole
     status?: AccountStatus
     paymentStatus?: PaymentStatus
+    premiumEntitlement?: boolean
     phone?: string | null
   }
 
@@ -15,6 +16,7 @@ declare module 'next-auth' {
       role: UserRole
       status: AccountStatus
       paymentStatus: PaymentStatus
+      premiumEntitlement: boolean
       phone: string | null
     } & DefaultSession['user']
   }
@@ -26,6 +28,7 @@ declare module 'next-auth/jwt' {
     role?: UserRole
     status?: AccountStatus
     paymentStatus?: PaymentStatus
+    premiumEntitlement?: boolean
     phone?: string | null
   }
 }

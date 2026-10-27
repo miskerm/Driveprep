@@ -11,7 +11,7 @@ export async function GET() {
   }
 
   const rows = [
-    ['Question', 'Option A', 'Option B', 'Option C', 'Option D', 'Correct Answer', 'Explanation', 'Module', 'Difficulty'],
+    ['Question', 'Option A', 'Option B', 'Option C', 'Option D', 'Correct Answer', 'Explanation'],
     [
       'What does a red triangular sign mean?',
       'Mandatory action',
@@ -20,8 +20,6 @@ export async function GET() {
       '',
       'B',
       'Red triangles warn drivers about a hazard ahead.',
-      'Road Signs',
-      'Easy',
     ],
     [
       'What is the speed limit in a residential area?',
@@ -31,8 +29,6 @@ export async function GET() {
       '',
       'B',
       'The general residential limit is 60 km/h.',
-      'Rules of the Road',
-      'Easy',
     ],
     [
       'When should you apply the parking brake?',
@@ -42,8 +38,6 @@ export async function GET() {
       '',
       'A',
       'Apply the parking brake whenever the vehicle is parked.',
-      'Vehicle Controls',
-      'Easy',
     ],
   ]
 
@@ -56,8 +50,6 @@ export async function GET() {
     { wch: 20 },
     { wch: 16 },
     { wch: 52 },
-    { wch: 18 },
-    { wch: 12 },
   ]
 
   const workbook = XLSX.utils.book_new()

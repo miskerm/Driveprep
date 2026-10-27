@@ -16,8 +16,6 @@ type ColumnMap = {
   optionsList: number | null
   correct: number | null
   explanation: number | null
-  module: number | null
-  difficulty: number | null
   order: number | null
 }
 
@@ -81,14 +79,6 @@ function isExplanationHeader(key: string) {
   return /^(explanation|explain|reason|rationale|note|notes|feedback)$/.test(key)
 }
 
-function isModuleHeader(key: string) {
-  return /^(module|modules|topic|category|section|subject|area)$/.test(key)
-}
-
-function isDifficultyHeader(key: string) {
-  return /^(difficulty|level|complexity)$/.test(key)
-}
-
 function looksLikeHeader(row: unknown[]) {
   const keys = row.map(headerKey).filter(Boolean)
   const hasQuestion = keys.some((key) => isQuestionHeader(key))
@@ -103,8 +93,6 @@ function mapFromHeader(row: unknown[]): ColumnMap | null {
   let correct: number | null = null
   let optionsList: number | null = null
   let explanation: number | null = null
-  let module: number | null = null
-  let difficulty: number | null = null
   let order: number | null = null
   const options: OptionColumn[] = []
 
@@ -139,14 +127,6 @@ function mapFromHeader(row: unknown[]): ColumnMap | null {
       explanation = index
       return
     }
-    if (module === null && isModuleHeader(key)) {
-      module = index
-      return
-    }
-    if (difficulty === null && isDifficultyHeader(key)) {
-      difficulty = index
-      return
-    }
   })
 
   if (question === null) return null
@@ -154,7 +134,7 @@ function mapFromHeader(row: unknown[]): ColumnMap | null {
 
   options.sort((a, b) => OPTION_KEYS.indexOf(a.key) - OPTION_KEYS.indexOf(b.key))
 
-  return { question, options, optionsList, correct, explanation, module, difficulty, order }
+  return { question, options, optionsList, correct, explanation, order }
 }
 
 function positionalMap(offset: number): ColumnMap {
@@ -169,8 +149,6 @@ function positionalMap(offset: number): ColumnMap {
     optionsList: null,
     correct: offset + 5,
     explanation: offset + 6,
-    module: null,
-    difficulty: null,
     order: offset === 1 ? 0 : null,
   }
 }
@@ -255,8 +233,6 @@ function inferCorrectColumn(
   used.add(map.question)
   if (map.optionsList !== null) used.add(map.optionsList)
   if (map.explanation !== null) used.add(map.explanation)
-  if (map.module !== null) used.add(map.module)
-  if (map.difficulty !== null) used.add(map.difficulty)
   if (map.order !== null) used.add(map.order)
   map.options.forEach((option) => used.add(option.index))
 
@@ -406,8 +382,6 @@ export function parseMockWorkbook(buffer: ArrayBuffer, fileName: string): MockWo
         options,
         correct,
         explanation: cell(row, map.explanation),
-        module: cell(row, map.module),
-        difficulty: cell(row, map.difficulty),
       })
 
       const rawOrder = map.order !== null ? cell(row, map.order) : ''

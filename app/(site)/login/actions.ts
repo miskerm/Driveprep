@@ -3,6 +3,7 @@
 import { AuthError } from 'next-auth'
 import { signIn } from '@/auth'
 import { normalizeIdentifier } from '@/lib/identifiers'
+import { getUserByIdentifier, isAdmin } from '@/lib/users'
 import { getRequestIp, rateLimit, safeCallbackUrl } from '@/lib/rate-limit'
 import type { AuthFormState } from '@/lib/form-types'
 
@@ -24,11 +25,15 @@ export async function loginAction(
     return { error: `Too many login attempts. Try again in ${ipLimit.retryAfterSeconds} seconds.` }
   }
 
+  // Admins always land on the admin dashboard, regardless of the callback URL.
+  const user = await getUserByIdentifier(identifier)
+  const redirectTo = user && isAdmin(user) ? '/admin' : callbackUrl
+
   try {
     await signIn('credentials', {
       identifier: identifier.value,
       password,
-      redirectTo: callbackUrl,
+      redirectTo,
     })
   } catch (error) {
     if (error instanceof AuthError) {

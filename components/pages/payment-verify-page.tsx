@@ -17,9 +17,11 @@ function formatBytes(bytes: number) {
 export function PaymentVerifyPage({
   amountLabel,
   userIdentifier,
+  hideHeader = false,
 }: {
   amountLabel: string
   userIdentifier: string
+  hideHeader?: boolean
 }) {
   const [state, formAction, pending] = useActionState(submitPaymentAction, initialState)
   const [fileName, setFileName] = useState('')
@@ -50,18 +52,20 @@ export function PaymentVerifyPage({
 
   return (
     <main className="min-h-screen bg-[#f6faf9] text-[#142238]">
-      <div className="border-b border-[#dbe5e4] bg-white">
-        <div className="mx-auto flex max-w-[900px] items-center justify-between gap-4 px-5 py-4">
-          <Link href="/payment" className="inline-flex items-center gap-2 rounded-lg border border-[#bfcecb] px-4 py-2.5 text-sm font-bold text-[#087f78]">
-            <ArrowLeft className="size-4" />
-            Back to payment details
-          </Link>
-          <span className="hidden items-center gap-2 text-sm font-bold text-[#607477] sm:flex">
-            <ShieldCheck className="size-5 text-[#168f82]" />
-            Verified by an administrator
-          </span>
+      {!hideHeader && (
+        <div className="border-b border-[#dbe5e4] bg-white">
+          <div className="mx-auto flex max-w-[900px] items-center justify-between gap-4 px-5 py-4">
+            <Link href="/payment" className="inline-flex items-center gap-2 rounded-lg border border-[#bfcecb] px-4 py-2.5 text-sm font-bold text-[#087f78]">
+              <ArrowLeft className="size-4" />
+              Back to payment details
+            </Link>
+            <span className="hidden items-center gap-2 text-sm font-bold text-[#607477] sm:flex">
+              <ShieldCheck className="size-5 text-[#168f82]" />
+              Verified by an administrator
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mx-auto max-w-[900px] px-5 py-10 lg:py-14">
         <section className="rounded-2xl border border-[#d8e2e0] bg-white p-6 shadow-sm sm:p-8">

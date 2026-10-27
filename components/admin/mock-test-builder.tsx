@@ -225,16 +225,6 @@ export function MockTestBuilder({ savedTests }: { savedTests: SavedMockTest[] })
                       {question.explanation && (
                         <p className="mt-2 text-xs leading-5 text-[#607477]">Explanation: {question.explanation}</p>
                       )}
-                      {(question.module || question.difficulty) && (
-                        <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-bold text-[#06625e]">
-                          {question.module && (
-                            <span className="rounded-full bg-white px-2 py-0.5 shadow-sm">{question.module}</span>
-                          )}
-                          {question.difficulty && (
-                            <span className="rounded-full bg-white px-2 py-0.5 shadow-sm">{question.difficulty}</span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </li>

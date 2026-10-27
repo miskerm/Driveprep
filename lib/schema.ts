@@ -259,10 +259,89 @@ const migrations: Migration[] = [
         options_json TEXT NOT NULL,
         correct_answer TEXT NOT NULL,
         explanation TEXT NOT NULL,
-        module TEXT NOT NULL,
-        difficulty TEXT NOT NULL,
         created_at TEXT NOT NULL
       )`)
+    },
+  },
+  {
+    version: 6,
+    name: 'ensure-study-categories',
+    up: async () => {
+      await db().execute(`CREATE TABLE IF NOT EXISTS study_categories (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`)
+      await db().execute(`CREATE INDEX IF NOT EXISTS study_categories_title_idx ON study_categories (title)`)
+
+      // Add category_id to existing study_modules if missing
+      const moduleColumns = await tableColumns('study_modules')
+      if (!moduleColumns.has('category_id')) {
+        await db().execute('ALTER TABLE study_modules ADD COLUMN category_id TEXT')
+        await db().execute('CREATE INDEX IF NOT EXISTS study_modules_category_idx ON study_modules (category_id)')
+      }
+
+      await db().execute(`CREATE TABLE IF NOT EXISTS study_category_questions (
+        id TEXT PRIMARY KEY,
+        category_id TEXT NOT NULL,
+        question TEXT NOT NULL,
+        options_json TEXT NOT NULL,
+        correct_answer TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+      )`)
+      await db().execute('CREATE INDEX IF NOT EXISTS study_category_questions_category_idx ON study_category_questions (category_id)')
+
+      // Migrate existing modules without a category into a default "General" category
+      const uncategorized = await db().execute(
+        'SELECT id FROM study_modules WHERE category_id IS NULL',
+      )
+      if (uncategorized.rows.length > 0) {
+        const defaultId = 'general'
+        const now = new Date().toISOString()
+        await db().execute({
+          sql: `INSERT OR IGNORE INTO study_categories (id, title, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+          args: [defaultId, 'General', 'Modules uploaded before categories were introduced.', now, now],
+        })
+        await db().execute({
+          sql: 'UPDATE study_modules SET category_id = ? WHERE category_id IS NULL',
+          args: [defaultId],
+        })
+      }
+    },
+  },
+  {
+    version: 7,
+    name: 'ensure-study-module-urls',
+    up: async () => {
+      // Add file_url column to study_modules if missing
+      const moduleColumns = await tableColumns('study_modules')
+      if (!moduleColumns.has('file_url')) {
+        await db().execute('ALTER TABLE study_modules ADD COLUMN file_url TEXT')
+      }
+      // Make file_data nullable if it isn't already
+      if (moduleColumns.has('file_data')) {
+        const col = moduleColumns.get('file_data')
+        if (col && col.notnull) {
+          await db().execute('ALTER TABLE study_modules RENAME TO study_modules_old')
+          await db().execute(`CREATE TABLE study_modules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_id TEXT,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            file_name TEXT,
+            file_url TEXT,
+            file_data BLOB,
+            created_at TEXT NOT NULL
+          )`)
+          await db().execute(`INSERT INTO study_modules (id, category_id, title, description, file_name, file_url, file_data, created_at)
+            SELECT id, category_id, title, description, file_name, NULL, file_data, created_at FROM study_modules_old`)
+          await db().execute('DROP TABLE study_modules_old')
+        }
+      }
+      await db().execute('CREATE INDEX IF NOT EXISTS study_modules_file_url_idx ON study_modules (file_url)')
     },
   },
 ]

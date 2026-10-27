@@ -4,8 +4,6 @@ export type ParsedMockQuestion = {
   options: string[]
   correct: string
   explanation: string
-  module: string
-  difficulty: string
 }
 
 export type MockImportState = {

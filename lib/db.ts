@@ -1,5 +1,5 @@
 import { createClient, type Client } from '@libsql/client'
-import type { AdminUser, StudyModule, StudyModuleFile } from '@/lib/types'
+import type { AdminUser, StudyModule, StudyModuleFile, StudyCategory, CategoryQuestion } from '@/lib/types'
 import type { ParsedMockQuestion, SavedMockTest } from '@/lib/mock-types'
 import type { LearnerAccess, LearnerDevice, LearnerPlan } from '@/lib/access-types'
 
@@ -24,6 +24,22 @@ async function ensureStudyModulesTable() {
     description TEXT NOT NULL,
     file_name TEXT NOT NULL,
     file_data BLOB NOT NULL,
+    created_at TEXT NOT NULL
+  )`)
+  await db().execute(`CREATE TABLE IF NOT EXISTS study_categories (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`)
+  await db().execute(`CREATE TABLE IF NOT EXISTS study_category_questions (
+    id TEXT PRIMARY KEY,
+    category_id TEXT NOT NULL,
+    question TEXT NOT NULL,
+    options_json TEXT NOT NULL,
+    correct_answer TEXT NOT NULL,
+    position INTEGER NOT NULL,
     created_at TEXT NOT NULL
   )`)
   tableReady = true
@@ -60,14 +76,15 @@ export async function getStudyModules(): Promise<StudyModule[]> {
     return await withRetry(async () => {
       await ensureStudyModulesTable()
       const result = await db().execute(
-        'SELECT id, title, description, file_name, length(file_data) AS file_size, created_at FROM study_modules ORDER BY id DESC',
+        'SELECT id, category_id, title, description, file_url, file_name, created_at FROM study_modules ORDER BY category_id IS NULL, category_id, id DESC',
       )
       return result.rows.map((row) => ({
         id: toNumber(row.id),
+        categoryId: row.category_id === null || row.category_id === undefined ? null : String(row.category_id),
         title: String(row.title ?? ''),
         description: String(row.description ?? ''),
-        fileName: String(row.file_name ?? ''),
-        fileSize: toNumber(row.file_size),
+        fileUrl: row.file_url === null || row.file_url === undefined ? null : String(row.file_url),
+        fileName: row.file_name === null || row.file_name === undefined ? null : String(row.file_name),
         createdAt: String(row.created_at ?? ''),
       }))
     })
@@ -77,21 +94,46 @@ export async function getStudyModules(): Promise<StudyModule[]> {
   }
 }
 
+export async function getStudyModulesByCategory(categoryId: string): Promise<StudyModule[]> {
+  try {
+    return await withRetry(async () => {
+      await ensureStudyModulesTable()
+      const result = await db().execute({
+        sql: 'SELECT id, category_id, title, description, file_url, file_name, created_at FROM study_modules WHERE category_id = ? ORDER BY id DESC',
+        args: [categoryId],
+      })
+      return result.rows.map((row) => ({
+        id: toNumber(row.id),
+        categoryId: row.category_id === null || row.category_id === undefined ? null : String(row.category_id),
+        title: String(row.title ?? ''),
+        description: String(row.description ?? ''),
+        fileUrl: row.file_url === null || row.file_url === undefined ? null : String(row.file_url),
+        fileName: row.file_name === null || row.file_name === undefined ? null : String(row.file_name),
+        createdAt: String(row.created_at ?? ''),
+      }))
+    })
+  } catch (error) {
+    console.error(`Could not load study modules for category ${categoryId}:`, error)
+    return []
+  }
+}
+
 export async function getStudyModuleFile(id: number): Promise<StudyModuleFile | null> {
   try {
     return await withRetry(async () => {
       await ensureStudyModulesTable()
       const result = await db().execute({
-        sql: 'SELECT id, title, file_name, file_data FROM study_modules WHERE id = ?',
+        sql: 'SELECT id, category_id, title, file_name, file_url FROM study_modules WHERE id = ?',
         args: [id],
       })
       const row = result.rows[0]
       if (!row) return null
       return {
         id: toNumber(row.id),
+        categoryId: row.category_id === null || row.category_id === undefined ? null : String(row.category_id),
         title: String(row.title ?? ''),
-        fileName: String(row.file_name ?? 'module.pdf'),
-        data: toBytes(row.file_data),
+        fileName: row.file_name === null || row.file_name === undefined ? null : String(row.file_name),
+        fileUrl: row.file_url === null || row.file_url === undefined ? null : String(row.file_url),
       }
     })
   } catch (error) {
@@ -101,15 +143,16 @@ export async function getStudyModuleFile(id: number): Promise<StudyModuleFile | 
 }
 
 export async function addStudyModule(input: {
+  categoryId: string | null
   title: string
   description: string
-  fileName: string
-  fileData: Uint8Array
+  fileUrl: string | null
+  fileName: string | null
 }) {
   await ensureStudyModulesTable()
   await db().execute({
-    sql: 'INSERT INTO study_modules (title, description, file_name, file_data, created_at) VALUES (?, ?, ?, ?, ?)',
-    args: [input.title, input.description, input.fileName, input.fileData, new Date().toISOString()],
+    sql: 'INSERT INTO study_modules (category_id, title, description, file_url, file_name, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    args: [input.categoryId, input.title, input.description, input.fileUrl, input.fileName, new Date().toISOString()],
   })
   tableReady = false
 }
@@ -120,6 +163,186 @@ export async function deleteStudyModule(id: number) {
     await db().execute({ sql: 'DELETE FROM study_modules WHERE id = ?', args: [id] })
   })
 }
+
+// ============ Study Categories ============
+
+export async function getStudyCategories(): Promise<StudyCategory[]> {
+  try {
+    return await withRetry(async () => {
+      await ensureStudyModulesTable()
+      const categoriesResult = await db().execute(`
+        SELECT c.id, c.title, c.description, c.created_at, c.updated_at
+        FROM study_categories c
+        ORDER BY c.created_at DESC
+      `)
+      const categories: StudyCategory[] = []
+      for (const row of categoriesResult.rows) {
+        const id = String(row.id ?? '')
+        const modules = await getStudyModulesByCategory(id)
+        const questionsResult = await db().execute({
+          sql: 'SELECT id, category_id, question, options_json, correct_answer, position, created_at FROM study_category_questions WHERE category_id = ? ORDER BY position ASC, created_at ASC',
+          args: [id],
+        })
+        const questions = questionsResult.rows.map((qrow) => ({
+          id: String(qrow.id ?? ''),
+          categoryId: String(qrow.category_id ?? ''),
+          question: String(qrow.question ?? ''),
+          options: JSON.parse(String(qrow.options_json ?? '[]')),
+          correctAnswer: String(qrow.correct_answer ?? ''),
+          position: toNumber(qrow.position),
+          createdAt: String(qrow.created_at ?? ''),
+        }))
+        categories.push({
+          id,
+          title: String(row.title ?? ''),
+          description: row.description === null || row.description === undefined ? null : String(row.description),
+          modules,
+          questions,
+          createdAt: String(row.created_at ?? ''),
+          updatedAt: String(row.updated_at ?? ''),
+        })
+      }
+      return categories
+    })
+  } catch (error) {
+    console.error('Could not load study categories:', error)
+    return []
+  }
+}
+
+export async function getStudyCategory(categoryId: string): Promise<{
+  category: StudyCategory | null
+  modules: StudyModule[]
+  questions: CategoryQuestion[]
+} | null> {
+  try {
+    return await withRetry(async () => {
+      await ensureStudyModulesTable()
+      const categoryResult = await db().execute({
+        sql: 'SELECT id, title, description, created_at, updated_at FROM study_categories WHERE id = ?',
+        args: [categoryId],
+      })
+      const categoryRow = categoryResult.rows[0]
+      if (!categoryRow) return null
+
+      const modulesResult = await db().execute({
+        sql: 'SELECT id, category_id, title, description, file_url, file_name, created_at FROM study_modules WHERE category_id = ? ORDER BY id DESC',
+        args: [categoryId],
+      })
+      const modules = modulesResult.rows.map((row) => ({
+        id: toNumber(row.id),
+        categoryId: row.category_id === null || row.category_id === undefined ? null : String(row.category_id),
+        title: String(row.title ?? ''),
+        description: String(row.description ?? ''),
+        fileUrl: row.file_url === null || row.file_url === undefined ? null : String(row.file_url),
+        fileName: row.file_name === null || row.file_name === undefined ? null : String(row.file_name),
+        createdAt: String(row.created_at ?? ''),
+      }))
+
+      const questionsResult = await db().execute({
+        sql: 'SELECT id, category_id, question, options_json, correct_answer, position, created_at FROM study_category_questions WHERE category_id = ? ORDER BY position ASC, created_at ASC',
+        args: [categoryId],
+      })
+      const questions = questionsResult.rows.map((row) => ({
+        id: String(row.id ?? ''),
+        categoryId: String(row.category_id ?? ''),
+        question: String(row.question ?? ''),
+        options: JSON.parse(String(row.options_json ?? '[]')),
+        correctAnswer: String(row.correct_answer ?? ''),
+        position: toNumber(row.position),
+        createdAt: String(row.created_at ?? ''),
+      }))
+
+      const category: StudyCategory = {
+        id: String(categoryRow.id ?? ''),
+        title: String(categoryRow.title ?? ''),
+        description: categoryRow.description === null || categoryRow.description === undefined ? null : String(categoryRow.description),
+        modules,
+        questions,
+        createdAt: String(categoryRow.created_at ?? ''),
+        updatedAt: String(categoryRow.updated_at ?? ''),
+      }
+
+      return { category, modules, questions }
+    })
+  } catch (error) {
+    console.error(`Could not load study category ${categoryId}:`, error)
+    return null
+  }
+}
+
+export async function createStudyCategory(input: {
+  id: string
+  title: string
+  description?: string | null
+}) {
+  await ensureStudyModulesTable()
+  const now = new Date().toISOString()
+  await db().execute({
+    sql: 'INSERT INTO study_categories (id, title, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    args: [input.id, input.title, input.description ?? null, now, now],
+  })
+}
+
+export async function updateStudyCategory(input: {
+  id: string
+  title: string
+  description?: string | null
+}) {
+  await ensureStudyModulesTable()
+  const now = new Date().toISOString()
+  await db().execute({
+    sql: 'UPDATE study_categories SET title = ?, description = ?, updated_at = ? WHERE id = ?',
+    args: [input.title, input.description ?? null, now, input.id],
+  })
+}
+
+export async function deleteStudyCategory(categoryId: string) {
+  await withRetry(async () => {
+    await ensureStudyModulesTable()
+    await db().batch(
+      [
+        { sql: 'DELETE FROM study_category_questions WHERE category_id = ?', args: [categoryId] },
+        { sql: 'DELETE FROM study_modules WHERE category_id = ?', args: [categoryId] },
+        { sql: 'DELETE FROM study_categories WHERE id = ?', args: [categoryId] },
+      ],
+      'write',
+    )
+  })
+}
+
+// ============ Category Questions ============
+
+export async function addCategoryQuestion(input: {
+  id: string
+  categoryId: string
+  question: string
+  options: string[]
+  correctAnswer: string
+}) {
+  await ensureStudyModulesTable()
+  const now = new Date().toISOString()
+  // Determine next position
+  const last = await db().execute({
+    sql: 'SELECT COALESCE(MAX(position), 0) AS max_pos FROM study_category_questions WHERE category_id = ?',
+    args: [input.categoryId],
+  })
+  const position = toNumber(last.rows[0].max_pos) + 1
+
+  await db().execute({
+    sql: 'INSERT INTO study_category_questions (id, category_id, question, options_json, correct_answer, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    args: [input.id, input.categoryId, input.question, JSON.stringify(input.options), input.correctAnswer, position, now],
+  })
+}
+
+export async function deleteCategoryQuestion(questionId: string) {
+  await withRetry(async () => {
+    await ensureStudyModulesTable()
+    await db().execute({ sql: 'DELETE FROM study_category_questions WHERE id = ?', args: [questionId] })
+  })
+}
+
+// ============ End of new functions ============
 
 export async function getAdminUsers(): Promise<AdminUser[]> {
   try {
@@ -356,8 +579,6 @@ async function ensureMockTables() {
     options_json TEXT NOT NULL,
     correct_answer TEXT NOT NULL,
     explanation TEXT NOT NULL,
-    module TEXT NOT NULL,
-    difficulty TEXT NOT NULL,
     created_at TEXT NOT NULL
   )`)
   mockTablesReady = true
@@ -415,7 +636,7 @@ export async function addMockTest(input: {
       ],
     },
     ...input.questions.map((question) => ({
-      sql: 'INSERT INTO mock_questions (id, mock_test_id, position, question, options_json, correct_answer, explanation, module, difficulty, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      sql: 'INSERT INTO mock_questions (id, mock_test_id, position, question, options_json, correct_answer, explanation, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       args: [
         `${id}:${question.position}`,
         id,
@@ -424,8 +645,6 @@ export async function addMockTest(input: {
         JSON.stringify(question.options),
         question.correct,
         question.explanation,
-        question.module,
-        question.difficulty,
         now,
       ],
     })),
@@ -453,7 +672,7 @@ export async function getMockTestQuestions(mockTestId: string): Promise<ParsedMo
     return await withRetry(async () => {
       await ensureMockTables()
       const result = await db().execute({
-        sql: 'SELECT position, question, options_json, correct_answer, explanation, module, difficulty FROM mock_questions WHERE mock_test_id = ? ORDER BY position ASC',
+        sql: 'SELECT position, question, options_json, correct_answer, explanation, created_at FROM mock_questions WHERE mock_test_id = ? ORDER BY position ASC',
         args: [mockTestId],
       })
       return result.rows.map((row) => {
@@ -470,8 +689,6 @@ export async function getMockTestQuestions(mockTestId: string): Promise<ParsedMo
           options,
           correct: String(row.correct_answer ?? ''),
           explanation: String(row.explanation ?? ''),
-          module: String(row.module ?? ''),
-          difficulty: String(row.difficulty ?? ''),
         }
       })
     })

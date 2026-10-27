@@ -66,6 +66,11 @@ See `.env.example` for the full list and comments.
 - `getRequestIp()` trusts `x-forwarded-for`; deploy behind a proxy that overwrites this header.
 - Use HTTPS in production so Auth.js can set secure cookies.
 
+## Development notes
+
+- **RSC performance guard** — React's development-only Server Components timing track can produce a negative `end` timestamp when a server component awaits work and then redirects (for example `/payment`). Chromium then throws `'​PaymentRoute' cannot have a negative time stamp` inside `performance.measure`, which breaks the dev overlay. `app/layout.tsx` injects a small script in development only that clamps non-finite/negative timestamps. The production HTML does not include it. Upstream: [facebook/react#37561](https://github.com/facebook/react/issues/37561), [vercel/next.js#99032](https://github.com/vercel/next.js/issues/99032). Remove the guard once the fix ships in a stable Next.js release.
+- **Turso latency** — schema migrations and session checks query Turso on every protected request. A slow or unreachable Turso endpoint appears as a 500 with `ConnectTimeoutError`; retry or check network access to the database host.
+
 ## Scripts
 
 ```bash

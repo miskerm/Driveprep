@@ -51,6 +51,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role: user.role,
           status: user.status,
           paymentStatus: user.paymentStatus,
+          premiumEntitlement: user.premiumEntitlement,
         }
       },
     }),
@@ -62,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role ?? 'user'
         token.status = user.status ?? 'active'
         token.paymentStatus = user.paymentStatus ?? 'unpaid'
+        token.premiumEntitlement = user.premiumEntitlement
         token.phone = user.phone ?? null
       }
       return token
@@ -72,6 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = (token.role as 'user' | 'admin' | undefined) ?? 'user'
         session.user.status = (token.status as 'active' | 'terminated' | undefined) ?? 'active'
         session.user.paymentStatus = (token.paymentStatus as 'unpaid' | 'pending' | 'approved' | 'rejected' | undefined) ?? 'unpaid'
+        session.user.premiumEntitlement = (token.premiumEntitlement as boolean | undefined) ?? false
         session.user.phone = (token.phone as string | null | undefined) ?? null
       }
       return session

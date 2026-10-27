@@ -2,22 +2,8 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ArrowLeft, BookOpen, Download, FileText, Upload } from 'lucide-react'
-import type { StudyModule } from '@/lib/types'
-
-const notes = [
-  { topic: 'Signs & Signals', content: 'Learn the meanings of South African road signs. Red signs are regulatory, yellow are warnings, and blue are informational.', image: '/study-road-scene.png' },
-  { topic: 'Vehicle Controls', content: 'Master pedals, steering, mirrors, lights, and the safety controls you need before your first test.', image: '/study-road-scene.png' },
-  { topic: 'Rules of the Road', content: 'Understand speed limits, right of way, lane discipline, intersections, and parking regulations.', image: '/study-road-scene.png' },
-  { topic: 'Safe Driving', content: 'Build defensive driving habits that help you stay alert, calm, and safe on the road.', image: '/study-road-scene.png' },
-]
-
-function formatBytes(bytes: number) {
-  if (!bytes) return 'Unknown size'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
+import { ArrowLeft, BookOpen, FileText, ShieldCheck, ExternalLink } from 'lucide-react'
+import type { StudyCategory } from '@/lib/types'
 
 function formatDate(value: string) {
   const date = new Date(value)
@@ -25,8 +11,8 @@ function formatDate(value: string) {
   return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-export function StudyPage({ modules }: { modules: StudyModule[] }) {
-  const [openModule, setOpenModule] = useState<string | null>(null)
+export function StudyPage({ categories }: { categories: StudyCategory[] }) {
+  const [openCategory, setOpenCategory] = useState<string | null>(null)
 
   return (
     <main className="min-h-screen bg-white">
@@ -34,7 +20,7 @@ export function StudyPage({ modules }: { modules: StudyModule[] }) {
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-7 py-4">
           <div>
             <h1 className="text-2xl font-extrabold">Study Materials</h1>
-            <p className="mt-1 text-sm font-semibold text-[#607477]">Read uploaded guides and study the core learner topics.</p>
+            <p className="mt-1 text-sm font-semibold text-[#607477]">Select a category to view its modules and practice questions.</p>
           </div>
           <Link href="/dashboard" className="flex items-center gap-2 rounded-lg border border-[#bfcecb] px-4 py-2.5 font-semibold text-[#087f78]">
             <ArrowLeft className="size-4" />
@@ -44,86 +30,140 @@ export function StudyPage({ modules }: { modules: StudyModule[] }) {
       </div>
 
       <div className="mx-auto max-w-[1440px] px-7 py-12">
-        <section className="mb-10">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-extrabold text-[#142238]">Uploaded study modules</h2>
-              <p className="mt-1 text-sm font-semibold text-[#607477]">Modules added by your instructor appear here.</p>
-            </div>
-            <Link href="/admin/modules" className="inline-flex items-center gap-2 rounded-lg bg-[#168f82] px-4 py-2.5 text-sm font-bold text-white">
-              <Upload className="size-4" />
-              Add module
-            </Link>
+        {categories.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[#c5d8d4] bg-[#f8fbfa] p-10 text-center">
+            <FileText className="mx-auto size-10 text-[#8aa5a1]" />
+            <p className="mt-3 text-base font-bold text-[#314957]">No study categories yet</p>
+            <p className="mt-1 text-sm text-[#607477]">Ask your instructor to add study categories from the admin dashboard.</p>
           </div>
-
-          {modules.length === 0 ? (
-            <div className="mt-5 rounded-xl border border-dashed border-[#c5d8d4] bg-[#f8fbfa] p-8 text-center">
-              <FileText className="mx-auto size-10 text-[#8aa5a1]" />
-              <p className="mt-3 text-base font-bold text-[#314957]">No uploaded modules yet</p>
-              <p className="mt-1 text-sm text-[#607477]">Your instructor can add a PDF module from the admin dashboard.</p>
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {modules.map((module) => (
-                <article key={module.id} className="flex flex-col overflow-hidden rounded-xl border border-[#d8e2e0] bg-white shadow-sm">
-                  <div className="flex items-start gap-3 border-b border-[#edf0ef] bg-[#f8fbfa] p-5">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-[#e6f5f3] text-[#087f78]">
-                      <BookOpen className="size-6" />
-                    </span>
-                    <div className="min-w-0">
-                      <h3 className="truncate text-lg font-extrabold text-[#142238]">{module.title}</h3>
-                      <p className="mt-1 truncate text-xs font-semibold text-[#718181]">{module.fileName}</p>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {categories.map((category) => (
+              <article
+                key={category.id}
+                className={`overflow-hidden rounded-xl border shadow-sm transition-all hover:shadow-md ${
+                  openCategory === category.id
+                    ? 'border-[#087f78] ring-1 ring-[#087f78]'
+                    : 'border-[#d8e2e0] bg-white'
+                }`}
+              >
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="grid size-9 place-items-center rounded-lg bg-[#e6f5f3] text-[#087f78]">
+                          <BookOpen className="size-5" />
+                        </span>
+                        <h3 className="text-lg font-extrabold text-[#142238]">{category.title}</h3>
+                      </div>
+                      {category.description && (
+                        <p className="mt-1.5 text-sm leading-5 text-[#607477]">{category.description}</p>
+                      )}
+                      <p className="mt-3 text-xs font-semibold text-[#8aa5a1]">
+                        {category.modules.length} module{category.modules.length === 1 ? '' : 's'} ·
+                        {category.questions.length} question{category.questions.length === 1 ? '' : 's'}
+                      </p>
                     </div>
+                    <button
+                      onClick={() => setOpenCategory(openCategory === category.id ? null : category.id)}
+                      className={`rounded-lg p-2 transition ${openCategory === category.id ? 'bg-[#e6f5f3] text-[#087f78]' : 'bg-[#f3f6f5] text-[#3d5153]'}`}
+                      aria-label={openCategory === category.id ? 'Close category' : 'Open category'}
+                    >
+                      {openCategory === category.id ? (
+                        <ShieldCheck className="size-4" />
+                      ) : (
+                        <ShieldCheck className="size-4" />
+                      )}
+                    </button>
                   </div>
-                  <div className="flex flex-1 flex-col p-5">
-                    <p className="flex-1 text-sm leading-6 text-[#3d5153]">{module.description}</p>
-                    <p className="mt-4 text-xs font-semibold text-[#718181]">
-                      {formatBytes(module.fileSize)}
-                      {module.createdAt ? ` · Added ${formatDate(module.createdAt)}` : ''}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <a href={`/api/modules/${module.id}`} target="_blank" rel="noreferrer" className="rounded-lg bg-[#168f82] px-4 py-2 text-sm font-bold text-white">
-                        Open module
-                      </a>
-                      <a href={`/api/modules/${module.id}?download=1`} className="inline-flex items-center gap-2 rounded-lg border border-[#bfcecb] px-4 py-2 text-sm font-bold text-[#087f78]">
-                        <Download className="size-4" />
-                        Download
-                      </a>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-xl font-extrabold text-[#142238]">Core learner topics</h2>
-          <p className="mt-1 text-sm font-semibold text-[#607477]">Start with these four study cards while you wait for new modules.</p>
-          <div className="mt-5 grid gap-6 md:grid-cols-2">
-            {notes.map((note) => (
-              <article key={note.topic} className="overflow-hidden rounded-xl border border-[#d8e2e0] bg-white shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={note.image} alt={`${note.topic} study illustration`} className="h-36 w-full object-cover" />
-                <div className="p-6">
-                  <div className="flex items-center gap-3">
-                    <BookOpen className="size-6 text-[#168f82]" />
-                    <h3 className="text-lg font-extrabold">{note.topic}</h3>
-                  </div>
-                  <p className="mt-4 leading-6 text-[#607477]">{note.content}</p>
-                  <button onClick={() => setOpenModule(openModule === note.topic ? null : note.topic)} className="mt-6 rounded-lg border border-[#087f78] bg-white px-4 py-2 font-bold text-[#087f78]">
-                    {openModule === note.topic ? 'Close module' : 'Open module notes'}
-                  </button>
-                  {openModule === note.topic && (
-                    <div className="mt-4 rounded-lg bg-[#effafa] p-4 text-sm leading-6 text-[#38575a]">
-                      <strong>Key lesson:</strong> Read the signs carefully, check mirrors before moving, and practise one safe decision at a time. This module is ready for learner review.
-                    </div>
-                  )}
                 </div>
+
+                {openCategory === category.id && (
+                  <div className="bg-[#fbfdfc] border-t border-[#edf0ef] p-5">
+                    {category.modules.length > 0 && (
+                      <>
+                        <div className="mb-4 flex items-center gap-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#087f78]">Modules</span>
+                        </div>
+                        <div className="space-y-2">
+                          {category.modules.map((module) => (
+                            <div
+                              key={module.id}
+                              className="flex items-center gap-3 rounded-lg border border-[#edf0ef] bg-white p-3"
+                            >
+                              <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e6f5f3] text-[#087f78]">
+                                <BookOpen className="size-3.5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-[#142238] truncate">{module.title}</p>
+                                {module.description && (
+                                  <p className="text-xs text-[#607477] truncate">{module.description}</p>
+                                )}
+                                <p className="text-xs text-[#607477]">Added {formatDate(module.createdAt)}</p>
+                              </div>
+                              {module.fileUrl ? (
+                                <a
+                                  href={module.fileUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#168f82] px-3 py-1.5 text-xs font-bold text-white"
+                                >
+                                  Open module <ExternalLink className="size-3.5" />
+                                </a>
+                              ) : (
+                                <span className="text-xs font-bold text-[#8aa5a1]">No link</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {category.questions.length > 0 && (
+                      <>
+                        {category.modules.length > 0 && <div className="mt-6 h-px bg-[#e3e8e6]" />}
+                        <div className="mb-4 flex items-center gap-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#087f78]">Practice questions</span>
+                          <span className="ml-auto text-xs font-semibold text-[#087f78]">
+                            {category.questions.length} question{category.questions.length === 1 ? '' : 's'}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {category.questions.map((question) => (
+                            <div key={question.id} className="rounded-lg border border-[#edf0ef] bg-white p-3">
+                              <div className="flex items-start gap-3">
+                                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#fff3d6] text-[#9a6a05]">
+                                  <ShieldCheck className="size-3.5" />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm leading-5 text-[#3d5153]">{question.question}</p>
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <span className="text-[10px] font-bold text-[#607477]">Options:</span>
+                                    {question.options.map((opt, i) => (
+                                      <span key={i} className="inline-flex items-center gap-1 rounded-full border border-[#d8e2e0] px-2 py-0.5 text-[10px] font-bold text-[#142238]">
+                                        {String.fromCharCode(65 + i)}. {opt}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {category.modules.length === 0 && category.questions.length === 0 && (
+                      <div className="rounded-lg border border-dashed border-[#c5d8d4] bg-[#f8fbfa] p-4 text-center">
+                        <p className="text-sm text-[#607477]">This category is empty. Add modules and questions from the admin dashboard.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>
-        </section>
+        )}
       </div>
     </main>
   )
