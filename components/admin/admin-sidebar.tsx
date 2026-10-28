@@ -57,7 +57,7 @@ export function AdminSidebar() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 lg:hidden" onClick={() => setMobileMenuOpen(false)} />
       )}
-      <div className="fixed inset-y-0 left-0 z-50 w-[280px] bg-white transform translate-x-[-280px] transition-transform duration-300 lg:hidden lg:static lg:translate-x-0 lg:shadow-lg lg:border-r lg:border-[#d8e2e0]">
+      <div className={`fixed inset-y-0 left-0 z-50 w-[280px] bg-white transform transition-transform duration-300 lg:hidden lg:static lg:shadow-lg lg:border-r lg:border-[#d8e2e0] ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-[280px]'}`}>
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#d8e2e0]">
           <span className="grid size-10 place-items-center rounded-xl bg-[#087f78] text-white">
             <ShieldCheck className="size-6" />
