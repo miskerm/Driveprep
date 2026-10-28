@@ -36,6 +36,26 @@ type AccessPayload = {
   access?: LearnerAccess | null
 }
 
+async function fetchWithRetry(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  attempts = 5,
+): Promise<Response> {
+  let lastError: unknown
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const response = await fetch(input, { cache: 'no-store', ...init })
+      return response
+    } catch (error) {
+      lastError = error
+      if (attempt < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)))
+      }
+    }
+  }
+  throw lastError
+}
+
 type AuthContextValue = {
   user: User
   access: LearnerAccess | null
@@ -94,7 +114,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const refreshAccess = useCallback(async () => {
     if (status !== 'authenticated') return
     try {
-      const response = await fetch('/api/access/status', { cache: 'no-store' })
+      const response = await fetchWithRetry('/api/access/status')
       if (!response.ok) return
       applyPayload((await response.json()) as AccessPayload)
     } catch (error) {
@@ -117,7 +137,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         const device = getDeviceIdentity()
         const registerKey = `${device.deviceId}`
         if (registeredRef.current !== registerKey) {
-          const response = await fetch('/api/access/register', {
+          const response = await fetchWithRetry('/api/access/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ deviceId: device.deviceId, label: device.label }),
@@ -129,7 +149,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        const response = await fetch('/api/access/status', { cache: 'no-store' })
+        const response = await fetchWithRetry('/api/access/status')
         if (!response.ok) return
         const payload = (await response.json()) as AccessPayload
         if (!cancelled) applyPayload(payload)

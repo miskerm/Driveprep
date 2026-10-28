@@ -1,12 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
-  Bell,
   BookOpen,
-  CircleHelp,
   ClipboardList,
   CreditCard,
   Flame,
@@ -20,9 +17,8 @@ import { useAuth, useProgress } from '@/components/providers'
 import { formatResultTime } from '@/lib/quiz-data'
 
 export function Dashboard() {
-  const router = useRouter()
   const { user, access, accessNotice } = useAuth()
-  const { stats, unreadCount, markNotificationsRead } = useProgress()
+  const { stats } = useProgress()
   const progressCaption = stats.overallProgress === 0 ? 'Start practising to track progress' : stats.overallProgress === 100 ? 'All questions completed!' : stats.overallProgress >= 50 ? 'Good progress!' : 'Keep going!'
   const streakLabel = `${stats.streak} day${stats.streak === 1 ? '' : 's'}`
   const premium = user?.plan === 'premium_1000'
@@ -50,13 +46,6 @@ export function Dashboard() {
             <Flame className="size-4 text-[#ff7d55]" />
             {stats.streak} Day Streak
           </Link>
-          <Link href="/faq" aria-label="Help" className="grid size-9 place-items-center rounded-lg border border-[#ced9d7]">
-            <CircleHelp className="size-4" />
-          </Link>
-          <button onClick={() => { markNotificationsRead(); router.push('/notifications') }} aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'} className="relative grid size-9 place-items-center rounded-lg border border-[#ced9d7]">
-            <Bell className="size-4" />
-            {unreadCount > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#ef594f] px-1 text-[11px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>}
-          </button>
           <Link href={user ? '/account' : '/login'} className="flex items-center gap-2">
             <span className="grid size-9 place-items-center rounded-full bg-[#0f928b] text-white">
               {(user?.name || 'Unknown')

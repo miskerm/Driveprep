@@ -500,24 +500,17 @@ export async function registerLearnerDevice(input: {
     })
   }
 
-  const knownDevice = await withRetry(async () =>
-    db().execute({
-      sql: 'SELECT device_id FROM learner_devices WHERE email = ? AND device_id = ?',
-      args: [input.email, input.deviceId],
-    }),
-  )
-
-  if (knownDevice.rows.length === 0) {
-    await db().execute({
-      sql: 'INSERT INTO learner_devices (email, device_id, label, user_agent, first_seen, last_seen) VALUES (?, ?, ?, ?, ?, ?)',
-      args: [input.email, input.deviceId, input.label, input.userAgent, now, now],
-    })
-  } else {
-    await db().execute({
-      sql: 'UPDATE learner_devices SET label = ?, user_agent = ?, last_seen = ? WHERE email = ? AND device_id = ?',
-      args: [input.label, input.userAgent, now, input.email, input.deviceId],
-    })
-  }
+  // Upsert the device so the same device is never registered twice.
+  // ON CONFLICT updates last_seen/label/user_agent without creating a new row.
+  await db().execute({
+    sql: `INSERT INTO learner_devices (email, device_id, label, user_agent, first_seen, last_seen)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(email, device_id) DO UPDATE SET
+        label = excluded.label,
+        user_agent = excluded.user_agent,
+        last_seen = excluded.last_seen`,
+    args: [input.email, input.deviceId, input.label, input.userAgent, now, now],
+  })
 
   const access = await getLearnerAccess(input.email)
   if (!access) throw new Error(`Learner access for ${input.email} could not be read after registering the device.`)

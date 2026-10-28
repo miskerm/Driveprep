@@ -370,6 +370,24 @@ const migrations: Migration[] = [
       }
     },
   },
+  {
+    version: 9,
+    name: 'ensure-learner-device-unique',
+    up: async () => {
+      // Remove duplicate device rows, keeping the most recent per (email, device_id)
+      await db().execute(`
+        DELETE FROM learner_devices
+        WHERE rowid NOT IN (
+          SELECT MIN(rowid) FROM learner_devices
+          GROUP BY email, device_id
+        )
+      `)
+      // Create a unique index so the same device can never be registered twice
+      await db().execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS learner_devices_unique ON learner_devices (email, device_id)',
+      )
+    },
+  },
 ]
 
 async function seedAdminAccount() {
