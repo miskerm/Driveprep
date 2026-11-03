@@ -117,7 +117,6 @@ export async function createModuleAction(
 
   if (!categoryId) return { status: 'error', message: 'Please select a category.' }
   if (!title) return { status: 'error', message: 'Please add a module title.' }
-  if (!description) return { status: 'error', message: 'Please add a short description.' }
   if (!fileUrl) return { status: 'error', message: 'Please add a module URL.' }
   try {
     new URL(fileUrl)
@@ -299,7 +298,6 @@ export async function saveCategoryExcelQuestionsAction(
   await requireAdmin()
   const categoryId = String(formData.get('categoryId') ?? '').trim()
   const title = String(formData.get('title') ?? '').trim()
-  const description = String(formData.get('description') ?? '').trim()
   const fileName = String(formData.get('fileName') ?? '').trim() || 'manual-entry'
   const questions = parseCategoryQuestions(formData.get('questions'))
 
@@ -319,7 +317,6 @@ export async function saveCategoryExcelQuestionsAction(
       id,
       categoryId,
       title,
-      description: description || null,
       questions: questions.map((q) => ({
         question: q.question,
         options: q.options,

@@ -61,7 +61,6 @@ export function StudyPage({ categories }: { categories: StudyCategory[] }) {
                       )}
                       <p className="mt-3 text-xs font-semibold text-[#8aa5a1]">
                         {category.modules.length} module{category.modules.length === 1 ? '' : 's'} ·
-                        {category.questions.length} question{category.questions.length === 1 ? '' : 's'} ·
                         {category.questionnaires.length} questionnaire{category.questionnaires.length === 1 ? '' : 's'}
                       </p>
                     </div>
@@ -161,45 +160,9 @@ export function StudyPage({ categories }: { categories: StudyCategory[] }) {
                       </>
                     )}
 
-                    {category.questions.length > 0 && (
-                      <>
-                        {(category.modules.length > 0 || category.questionnaires.length > 0) && (
-                          <div className="mt-6 h-px bg-[#e3e8e6]" />
-                        )}
-                        <div className="mb-4 flex items-center gap-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-[#087f78]">Practice questions</span>
-                          <span className="ml-auto text-xs font-semibold text-[#087f78]">
-                            {category.questions.length} question{category.questions.length === 1 ? '' : 's'}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          {category.questions.map((question) => (
-                            <div key={question.id} className="rounded-lg border border-[#edf0ef] bg-white p-3">
-                              <div className="flex items-start gap-3">
-                                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#fff3d6] text-[#9a6a05]">
-                                  <ShieldCheck className="size-3.5" />
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm leading-5 text-[#3d5153]">{question.question}</p>
-                                  <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-[10px] font-bold text-[#607477]">Options:</span>
-                                    {question.options.map((opt, i) => (
-                                      <span key={i} className="inline-flex items-center gap-1 rounded-full border border-[#d8e2e0] px-2 py-0.5 text-[10px] font-bold text-[#142238]">
-                                        {String.fromCharCode(65 + i)}. {opt}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {category.modules.length === 0 && category.questionnaires.length === 0 && category.questions.length === 0 && (
+                    {category.modules.length === 0 && category.questionnaires.length === 0 && (
                       <div className="rounded-lg border border-dashed border-[#c5d8d4] bg-[#f8fbfa] p-4 text-center">
-                        <p className="text-sm text-[#607477]">This category is empty. Add modules, questions, or questionnaires from the admin dashboard.</p>
+                        <p className="text-sm text-[#607477]">This category is empty. Add modules or questionnaires from the admin dashboard.</p>
                       </div>
                     )}
                   </div>

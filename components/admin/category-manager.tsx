@@ -331,16 +331,6 @@ function CategoryCard({ category }: CategoryCardProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-[#314957] block">Description</label>
-                  <textarea
-                    name="description"
-                    rows={2}
-                    required
-                    placeholder="What will learners cover?"
-                    className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
                   <label className="text-xs font-bold text-[#314957] block">Module link (URL)</label>
                   <input
                     name="moduleUrl"
@@ -417,15 +407,6 @@ function CategoryCard({ category }: CategoryCardProps) {
                         required
                         defaultValue={importState.suggestedTitle || importState.fileName.replace(/\.(xlsx|xls|csv)$/i, '')}
                         placeholder="e.g. Road Signs Quiz 1"
-                        className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-[#314957] block">Description (optional)</label>
-                      <textarea
-                        name="description"
-                        rows={2}
-                        placeholder="What does this question set cover?"
                         className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm"
                       />
                     </div>
