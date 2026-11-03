@@ -705,6 +705,70 @@ export async function addStudyQuestionnaireWithQuestions(input: {
   await db().batch(statements, 'write')
 }
 
+export async function generateMockTestsFromQuestionnaires(): Promise<{
+  created: number
+  tests: Array<{ id: string; title: string; questionCount: number }>
+}> {
+  await ensureStudyQuestionnairesTable()
+  const categories = await getStudyCategories()
+
+  // Collect all questions from all questionnaires across all categories
+  const allQuestions: Array<{ question: string; options: string[]; correctAnswer: string }> = []
+  for (const category of categories) {
+    for (const questionnaire of category.questionnaires) {
+      for (const q of questionnaire.questions) {
+        allQuestions.push({
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+        })
+      }
+    }
+  }
+
+  if (allQuestions.length < 100) {
+    throw new Error(`Not enough questions to generate mock tests. Need at least 100, found ${allQuestions.length}. Import more questions via Excel first.`)
+  }
+
+  // Fisher-Yates shuffle
+  const shuffled = [...allQuestions]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+
+  // Remove any previously generated mock tests to avoid duplicates
+  const existing = await getMockTests()
+  for (const test of existing) {
+    if (test.title.startsWith('Mock Test')) {
+      await deleteMockTest(test.id)
+    }
+  }
+
+  // Create 3 mock tests of 100 questions each
+  const results: Array<{ id: string; title: string; questionCount: number }> = []
+  for (let i = 0; i < 3; i++) {
+    const setQuestions = shuffled.slice(i * 100, (i + 1) * 100)
+    const id = await addMockTest({
+      title: `Mock Test ${i + 1}`,
+      description: `100 questions drawn from study questionnaires across all categories. 30-minute time limit. Unanswered questions count as incorrect.`,
+      fileName: `mock-test-${i + 1}-generated`,
+      timeLimitMin: 30,
+      passMark: 75,
+      questions: setQuestions.map((q, idx) => ({
+        position: idx + 1,
+        question: q.question,
+        options: q.options,
+        correct: q.correctAnswer,
+        explanation: '',
+      })),
+    })
+    results.push({ id, title: `Mock Test ${i + 1}`, questionCount: setQuestions.length })
+  }
+
+  return { created: results.length, tests: results }
+}
+
 // ============ End of new functions ============
 
 export async function getAdminUsers(): Promise<AdminUser[]> {

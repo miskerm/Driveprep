@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { parseMockWorkbook } from '@/lib/mock-excel'
-import { addMockTest, deleteMockTest } from '@/lib/db'
+import { addMockTest, deleteMockTest, generateMockTestsFromQuestionnaires } from '@/lib/db'
 import { requireAdmin } from '@/lib/session'
 import type { MockImportState, MockSaveState, ParsedMockQuestion } from '@/lib/mock-types'
 
@@ -163,5 +163,35 @@ export async function deleteMockTestAction(formData: FormData) {
     revalidatePath('/full-mock')
   } catch (error) {
     console.error('Failed to delete mock test:', error)
+  }
+}
+
+export type GenerateMockTestsState = {
+  status: 'idle' | 'success' | 'error'
+  message: string
+}
+
+const idleGenerate: GenerateMockTestsState = { status: 'idle', message: '' }
+
+export async function generateMockTestsAction(
+  _previousState: GenerateMockTestsState,
+  formData: FormData,
+): Promise<GenerateMockTestsState> {
+  await requireAdmin()
+
+  try {
+    const result = await generateMockTestsFromQuestionnaires()
+    revalidatePath('/admin/mock-tests')
+    revalidatePath('/mock-tests')
+    return {
+      status: 'success',
+      message: `Generated ${result.created} mock tests: ${result.tests.map((t) => t.title).join(', ')}. Each has 100 questions with a 30-minute time limit.`,
+    }
+  } catch (error) {
+    console.error('Failed to generate mock tests:', error)
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Failed to generate mock tests. Make sure you have at least 100 questions imported via Excel.',
+    }
   }
 }

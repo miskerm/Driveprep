@@ -1,9 +1,12 @@
 import { MockTestBuilder } from '@/components/admin/mock-test-builder'
+import { GenerateMockTestsForm } from '@/components/admin/generate-mock-tests-form'
 import { getMockTests } from '@/lib/db'
+import { requireAdmin } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminMockTestsPage() {
+  await requireAdmin()
   const savedTests = await getMockTests()
 
   return (
@@ -16,6 +19,9 @@ export default async function AdminMockTestsPage() {
           to the database.
         </p>
       </header>
+
+      <GenerateMockTestsForm />
+
       <MockTestBuilder savedTests={savedTests} />
     </main>
   )
