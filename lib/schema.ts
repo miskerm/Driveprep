@@ -371,6 +371,37 @@ const migrations: Migration[] = [
     },
   },
   {
+    version: 10,
+    name: 'ensure-study-questionnaires',
+    up: async () => {
+      await db().execute(`CREATE TABLE IF NOT EXISTS study_questionnaires (
+        id TEXT PRIMARY KEY,
+        category_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        question_count INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`)
+      await db().execute(
+        'CREATE INDEX IF NOT EXISTS study_questionnaires_category_idx ON study_questionnaires (category_id)',
+      )
+
+      await db().execute(`CREATE TABLE IF NOT EXISTS study_questionnaire_questions (
+        id TEXT PRIMARY KEY,
+        questionnaire_id TEXT NOT NULL,
+        question TEXT NOT NULL,
+        options_json TEXT NOT NULL,
+        correct_answer TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+      )`)
+      await db().execute(
+        'CREATE INDEX IF NOT EXISTS study_questionnaire_questions_questionnaire_idx ON study_questionnaire_questions (questionnaire_id)',
+      )
+    },
+  },
+  {
     version: 9,
     name: 'ensure-learner-device-unique',
     up: async () => {

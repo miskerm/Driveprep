@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ArrowLeft, BookOpen, FileText, ShieldCheck, ExternalLink } from 'lucide-react'
+import { ArrowLeft, BookOpen, FileText, List, ShieldCheck, ExternalLink } from 'lucide-react'
 import type { StudyCategory } from '@/lib/types'
 
 function formatDate(value: string) {
@@ -20,7 +20,7 @@ export function StudyPage({ categories }: { categories: StudyCategory[] }) {
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-7 py-4">
           <div>
             <h1 className="text-2xl font-extrabold">Study Materials</h1>
-            <p className="mt-1 text-sm font-semibold text-[#607477]">Select a category to view its modules and practice questions.</p>
+            <p className="mt-1 text-sm font-semibold text-[#607477]">Select a category to view its modules, practice questions, and questionnaires.</p>
           </div>
           <Link href="/dashboard" className="flex items-center gap-2 rounded-lg border border-[#bfcecb] px-4 py-2.5 font-semibold text-[#087f78]">
             <ArrowLeft className="size-4" />
@@ -61,7 +61,8 @@ export function StudyPage({ categories }: { categories: StudyCategory[] }) {
                       )}
                       <p className="mt-3 text-xs font-semibold text-[#8aa5a1]">
                         {category.modules.length} module{category.modules.length === 1 ? '' : 's'} ·
-                        {category.questions.length} question{category.questions.length === 1 ? '' : 's'}
+                        {category.questions.length} question{category.questions.length === 1 ? '' : 's'} ·
+                        {category.questionnaires.length} questionnaire{category.questionnaires.length === 1 ? '' : 's'}
                       </p>
                     </div>
                     <button
@@ -119,9 +120,52 @@ export function StudyPage({ categories }: { categories: StudyCategory[] }) {
                       </>
                     )}
 
-                    {category.questions.length > 0 && (
+                    {category.questionnaires.length > 0 && (
                       <>
                         {category.modules.length > 0 && <div className="mt-6 h-px bg-[#e3e8e6]" />}
+                        <div className="mb-4 flex items-center gap-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#d79a0b]">Questionnaires</span>
+                          <span className="ml-auto text-xs font-semibold text-[#d79a0b]">
+                            {category.questionnaires.length} questionnaire{category.questionnaires.length === 1 ? '' : 's'}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {category.questionnaires.map((questionnaire, index) => (
+                            <div
+                              key={questionnaire.id}
+                              className="flex items-center gap-3 rounded-lg border border-[#fff3d6] bg-white p-3"
+                            >
+                              <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#fff8e6] text-[#d79a0b]">
+                                <List className="size-3.5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-[#142238] truncate">
+                                  Questionnaire {index + 1}: {questionnaire.title}
+                                </p>
+                                {questionnaire.description && (
+                                  <p className="text-xs text-[#607477] truncate">{questionnaire.description}</p>
+                                )}
+                                <p className="text-xs text-[#607477]">
+                                  {questionnaire.questionCount} question{questionnaire.questionCount === 1 ? '' : 's'}
+                                </p>
+                              </div>
+                              <Link
+                                href={`/questionnaires/${questionnaire.id}/take`}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#d79a0b] px-3 py-1.5 text-xs font-bold text-white"
+                              >
+                                Take <ExternalLink className="size-3.5" />
+                              </Link>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {category.questions.length > 0 && (
+                      <>
+                        {(category.modules.length > 0 || category.questionnaires.length > 0) && (
+                          <div className="mt-6 h-px bg-[#e3e8e6]" />
+                        )}
                         <div className="mb-4 flex items-center gap-2">
                           <span className="text-xs font-bold uppercase tracking-wider text-[#087f78]">Practice questions</span>
                           <span className="ml-auto text-xs font-semibold text-[#087f78]">
@@ -153,9 +197,9 @@ export function StudyPage({ categories }: { categories: StudyCategory[] }) {
                       </>
                     )}
 
-                    {category.modules.length === 0 && category.questions.length === 0 && (
+                    {category.modules.length === 0 && category.questionnaires.length === 0 && category.questions.length === 0 && (
                       <div className="rounded-lg border border-dashed border-[#c5d8d4] bg-[#f8fbfa] p-4 text-center">
-                        <p className="text-sm text-[#607477]">This category is empty. Add modules and questions from the admin dashboard.</p>
+                        <p className="text-sm text-[#607477]">This category is empty. Add modules, questions, or questionnaires from the admin dashboard.</p>
                       </div>
                     )}
                   </div>

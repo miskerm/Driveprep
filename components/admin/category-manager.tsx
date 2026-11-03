@@ -12,6 +12,10 @@ import {
   Edit2,
   ArrowRight,
   ShieldCheck,
+  List,
+  Upload,
+  Download,
+  AlertTriangle,
 } from 'lucide-react'
 import {
   createCategoryAction,
@@ -19,19 +23,34 @@ import {
   deleteCategoryAction,
   createModuleAction,
   deleteModuleAction,
-  createCategoryQuestionAction,
-  deleteCategoryQuestionAction,
+  importCategoryExcelAction,
+  saveCategoryExcelQuestionsAction,
+  deleteQuestionnaireAction,
 } from '@/app/admin/modules/actions'
 import type {
   CategoryFormState,
   ModuleFormState,
-  QuestionFormState,
   StudyCategory,
+  StudyQuestionnaire,
 } from '@/lib/types'
+import type {
+  CategoryExcelImportState,
+  CategoryExcelSaveState,
+  ParsedMockQuestion,
+} from '@/lib/mock-types'
 
 const initialCategoryState: CategoryFormState = { status: 'idle', message: '' }
 const initialModuleState: ModuleFormState = { status: 'idle', message: '' }
-const initialQuestionState: QuestionFormState = { status: 'idle', message: '' }
+const initialImportState: CategoryExcelImportState = {
+  status: 'idle',
+  message: '',
+  questions: [],
+  warnings: [],
+  suggestedTitle: '',
+  fileName: '',
+  categoryId: '',
+}
+const initialSaveState: CategoryExcelSaveState = { status: 'idle', message: '' }
 
 function formatBytes(bytes: number) {
   if (!bytes) return 'Unknown size'
@@ -43,7 +62,7 @@ function formatBytes(bytes: number) {
 function formatDate(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleString(undefined, {
+  return date.toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -78,7 +97,7 @@ export function CategoryManager({ categories }: { categories: StudyCategory[] })
           </span>
           <div>
             <h2 className="text-lg font-extrabold text-[#142238]">Create category</h2>
-            <p className="mt-1 text-sm text-[#607477]">A category groups modules and practice questions together.</p>
+            <p className="mt-1 text-sm text-[#607477]">A category groups modules and imported question sets together.</p>
           </div>
         </div>
 
@@ -165,22 +184,28 @@ interface CategoryCardProps {
 
 function CategoryCard({ category }: CategoryCardProps) {
   const [moduleState, moduleAction, modulePending] = useActionState(createModuleAction, initialModuleState)
-  const [questionState, questionAction, questionPending] = useActionState(createCategoryQuestionAction, initialQuestionState)
+  const [importState, importAction, importing] = useActionState(importCategoryExcelAction, initialImportState)
+  const [saveState, saveAction, saving] = useActionState(saveCategoryExcelQuestionsAction, initialSaveState)
   const moduleFormRef = useRef<HTMLFormElement>(null)
-  const questionFormRef = useRef<HTMLFormElement>(null)
+  const importFormRef = useRef<HTMLFormElement>(null)
+  const saveFormRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     if (moduleState.status === 'success') moduleFormRef.current?.reset()
   }, [moduleState])
   useEffect(() => {
-    if (questionState.status === 'success') questionFormRef.current?.reset()
-  }, [questionState])
+    if (importState.status === 'success') importFormRef.current?.reset()
+  }, [importState])
+  useEffect(() => {
+    if (saveState.status === 'success') saveFormRef.current?.reset()
+  }, [saveState])
 
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(category.title)
   const [editDesc, setEditDesc] = useState(category.description ?? '')
   const [showModuleForm, setShowModuleForm] = useState(false)
-  const [showQuestionForm, setShowQuestionForm] = useState(false)
+  const [showImportForm, setShowImportForm] = useState(false)
+  const [showImportReview, setShowImportReview] = useState(false)
 
   return (
     <article className="rounded-xl border border-[#e3e8e6] bg-white p-5 shadow-sm overflow-hidden">
@@ -254,7 +279,8 @@ function CategoryCard({ category }: CategoryCardProps) {
               </div>
               <p className="text-xs font-semibold text-[#8aa5a1]">
                 {category.modules.length} module{category.modules.length === 1 ? '' : 's'} ·
-                {category.questions.length} question{category.questions.length === 1 ? '' : 's'}
+                {category.questionnaires.length} question set{category.questionnaires.length === 1 ? '' : 's'} ·
+                {category.questions.length} practice question{category.questions.length === 1 ? '' : 's'}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -270,7 +296,7 @@ function CategoryCard({ category }: CategoryCardProps) {
               </button>
               <form
                 onSubmit={(e) => {
-                  if (!window.confirm(`Delete “${category.title}” category? This removes all its modules and questions and cannot be undone.`)) {
+                  if (!window.confirm(`Delete “${category.title}” category? This removes all its modules, question sets, and questions and cannot be undone.`)) {
                     e.preventDefault()
                   }
                 }}
@@ -357,89 +383,167 @@ function CategoryCard({ category }: CategoryCardProps) {
             </button>
           )}
 
-          {/* Add Question */}
-          {showQuestionForm && (
+          {/* Import Questions from Excel */}
+          {showImportForm && (
             <div className="mt-4 pt-4 border-t border-[#edf0ef] space-y-4">
               <div>
-                <h4 className="text-sm font-bold text-[#142238]">Add practice question to “{category.title}”</h4>
-                <p className="mt-1 text-xs text-[#607477]">Learners can answer this question when studying the category.</p>
+                <h4 className="text-sm font-bold text-[#142238]">Import questions from Excel to “{category.title}”</h4>
+                <p className="mt-1 text-xs text-[#607477]">
+                  Upload a workbook and the questions are read in sheet order, row by row. Each import becomes its own
+                  numbered question set under this category.
+                </p>
               </div>
-              <form ref={questionFormRef} action={questionAction} className="space-y-3">
-                <input type="hidden" name="categoryId" value={category.id} />
-                <div>
-                  <label className="text-xs font-bold text-[#314957] block">Question</label>
+
+              {importState.status === 'success' && importState.questions.length > 0 && !showImportReview ? (
+                <>
+                  <div className="rounded-lg border border-[#dbe8e6] bg-[#f8fbfa] p-3 text-xs leading-5 text-[#3d5153]">
+                    <p className="font-bold text-[#142238]">Questions read from Excel</p>
+                    <p className="mt-1">
+                      {importState.questions.length} question{importState.questions.length === 1 ? '' : 's'} found in{" "}
+                      <code className="rounded bg-white px-1 py-0.5">{importState.fileName}</code>, in Excel order.
+                    </p>
+                  </div>
+
+                  <form ref={saveFormRef} action={saveAction} className="space-y-3">
+                    <input type="hidden" name="categoryId" value={category.id} />
+                    <input type="hidden" name="questions" value={JSON.stringify(importState.questions)} />
+                    <input type="hidden" name="fileName" value={importState.fileName} />
+
+                    <div>
+                      <label className="text-xs font-bold text-[#314957] block">Question set title</label>
+                      <input
+                        name="title"
+                        type="text"
+                        required
+                        defaultValue={importState.suggestedTitle || importState.fileName.replace(/\.(xlsx|xls|csv)$/i, '')}
+                        placeholder="e.g. Road Signs Quiz 1"
+                        className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-[#314957] block">Description (optional)</label>
+                      <textarea
+                        name="description"
+                        rows={2}
+                        placeholder="What does this question set cover?"
+                        className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm"
+                      />
+                    </div>
+
+                    {saveState.status !== 'idle' && (
+                      <p role="status" className={`flex items-start gap-2 rounded-lg p-2 text-xs font-semibold ${saveState.status === 'success' ? 'bg-[#e6f5f3] text-[#06625e]' : 'bg-[#fdeeee] text-[#b33636]'}`}>
+                        {saveState.status === 'success' && <CheckCircle2 className="mt-0.5 size-4 shrink-0" />}
+                        {saveState.message}
+                      </p>
+                    )}
+
+                    <div className="flex gap-3">
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#087f78] px-4 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <SaveIcon className="size-3.5" />
+                        {saving ? 'Saving…' : 'Save question set'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowImportForm(false)}
+                        className="mt-2 w-full rounded-lg border border-[#cbd9d7] px-4 py-2 text-sm font-bold text-[#607477]"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </>
+              ) : null}
+
+              {!importState.status || importState.status === 'idle' || importState.status === 'error' ? (
+                <form ref={importFormRef} action={importAction} className="mt-3 flex flex-col gap-3 sm:flex-row">
+                  <input type="hidden" name="categoryId" value={category.id} />
                   <input
-                    name="question"
-                    type="text"
+                    name="categoryExcel"
+                    type="file"
+                    accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
                     required
-                    placeholder="e.g. What does a red circular sign mean?"
-                    className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm"
+                    className="block w-full flex-1 cursor-pointer rounded-lg border border-[#cbd9d7] bg-white px-3 py-2.5 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#fff1ed] file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-[#c24834]"
                   />
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div>
-                    <label className="text-xs font-bold text-[#314957] block">Option A</label>
-                    <input name="optionA" type="text" required className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-[#314957] block">Option B</label>
-                    <input name="optionB" type="text" required className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-[#314957] block">Option C</label>
-                    <input name="optionC" type="text" required className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-[#314957] block">Option D</label>
-                    <input name="optionD" type="text" required className="w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm" />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[#314957] block">Correct answer</label>
-                  <select name="correctAnswer" required className="mt-1 w-full rounded-lg border border-[#cbd9d7] px-3 py-2 text-sm">
-                    <option value="">Select correct option</option>
-                    <option value="A">Option A</option>
-                    <option value="B">Option B</option>
-                    <option value="C">Option C</option>
-                    <option value="D">Option D</option>
-                  </select>
-                  <p className="mt-1 text-xs text-[#718181]">The correct answer text must match one of the options above.</p>
-                </div>
-                {questionState.status !== 'idle' && (
-                  <p role="status" className={`flex items-start gap-2 rounded-lg p-2 text-xs font-semibold ${questionState.status === 'success' ? 'bg-[#e6f5f3] text-[#06625e]' : 'bg-[#fdeeee] text-[#b33636]'}`}>
-                    {questionState.message}
+                  <button
+                    type="submit"
+                    disabled={importing}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#ef6a57] px-4 py-2.5 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Upload className="size-4" />
+                    {importing ? 'Reading…' : 'Read Excel'}
+                  </button>
+                  <a
+                    href="/api/admin/mock-template"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[#bfcecb] bg-white px-3 py-2 text-xs font-bold text-[#087f78]"
+                  >
+                    <Download className="size-4" />
+                    Download template
+                  </a>
+                </form>
+              ) : null}
+
+              {importState.status === 'error' && importState.message && (
+                <p role="status" className="flex items-start gap-2 rounded-lg p-2 text-xs font-semibold bg-[#fdeeee] text-[#b33636]">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                  {importState.message}
+                </p>
+              )}
+
+              {importState.warnings.length > 0 && (
+                <div className="mt-3 rounded-lg border border-[#f2dfac] bg-[#fffaf0] p-3 text-xs leading-5 text-[#8a6410]">
+                  <p className="flex items-center gap-2 font-bold">
+                    <AlertTriangle className="size-4" />
+                    Import notes
                   </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={questionPending}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#087f78] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
-                >
-                  <ShieldCheck className="size-3.5" />
-                  {questionPending ? 'Adding…' : 'Add question'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowQuestionForm(false)}
-                  className="mt-2 w-full rounded-lg border border-[#cbd9d7] px-4 py-2 text-sm font-bold text-[#607477]"
-                >
-                  Cancel
-                </button>
-              </form>
+                  <ul className="mt-1.5 list-disc space-y-0.5 pl-5">
+                    {importState.warnings.map((warning, index) => (
+                      <li key={`${warning}-${index}`}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
-          {!showQuestionForm && (
+          {!showImportForm && (
             <button
-              onClick={() => setShowQuestionForm(true)}
+              onClick={() => {
+                setShowImportForm(true)
+                setShowImportReview(false)
+              }}
               className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[#d8e2e0] bg-white px-4 py-2 text-sm font-bold text-[#087f78] hover:bg-[#effafa]"
             >
-              <ShieldCheck className="size-3.5" /> Add practice question
+              <Upload className="size-3.5" /> Import questions from Excel
             </button>
+          )}
+
+          {/* Imported question sets */}
+          {category.questionnaires.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-[#edf0ef] space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-[#142238]">Question sets</h4>
+                <span className="text-xs font-semibold text-[#607477]">
+                  {category.questionnaires.length} question set{category.questionnaires.length === 1 ? '' : 's'}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {category.questionnaires.map((questionnaire) => (
+                  <QuestionSetCard key={questionnaire.id} questionnaire={questionnaire} />
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Category summary */}
           <div className="mt-4 pt-4 border-t border-[#edf0ef]">
-            <p className="text-xs font-semibold text-[#607477]">{category.modules.length} module{category.modules.length === 1 ? '' : 's'} · {category.questions.length} question{category.questions.length === 1 ? '' : 's'}</p>
+            <p className="text-xs font-semibold text-[#607477]">
+              {category.modules.length} module{category.modules.length === 1 ? '' : 's'} ·
+              {category.questionnaires.length} question set{category.questionnaires.length === 1 ? '' : 's'} ·
+              {category.questions.length} practice question{category.questions.length === 1 ? '' : 's'}
+            </p>
             <Link
               href={`/study?category=${category.id}`}
               className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-[#bfcecb] px-3 py-1 text-xs font-bold text-[#087f78] hover:bg-[#effafa]"
@@ -447,6 +551,95 @@ function CategoryCard({ category }: CategoryCardProps) {
               <ArrowRight className="size-3.5" /> View in Study
             </Link>
           </div>
+        </div>
+      )}
+    </article>
+  )
+}
+
+function SaveIcon(props: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={props.className ? undefined : 24}
+      height={props.className ? undefined : 24}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={props.className}
+    >
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+      <polyline points="17 21 17 13 7 13 7 21" />
+      <polyline points="7 3 7 8 15 8" />
+    </svg>
+  )
+}
+
+interface QuestionSetCardProps {
+  questionnaire: StudyQuestionnaire
+}
+
+function QuestionSetCard({ questionnaire }: QuestionSetCardProps) {
+  return (
+    <article className="rounded-xl border border-[#e3e8e6] bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="grid size-9 place-items-center rounded-lg bg-[#fff8e6] text-[#d79a0b]">
+              <List className="size-5" />
+            </span>
+            <h4 className="text-base font-extrabold text-[#142238]">{questionnaire.title}</h4>
+          </div>
+          {questionnaire.description && (
+            <p className="mt-1 text-sm text-[#607477]">{questionnaire.description}</p>
+          )}
+          <p className="mt-2 text-xs font-semibold text-[#8aa5a1]">
+            {questionnaire.questionCount} question{questionnaire.questionCount === 1 ? '' : 's'} · in Excel order
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <form
+            onSubmit={(e) => {
+              if (!window.confirm(`Delete “${questionnaire.title}” question set? This removes all its questions and cannot be undone.`)) {
+                e.preventDefault()
+              }
+            }}
+            action={deleteQuestionnaireAction}
+            className="ml-2"
+          >
+            <input type="hidden" name="id" value={questionnaire.id} />
+            <button type="submit" className="rounded-lg border border-[#e7c9c9] px-3 py-1.5 text-xs font-bold text-[#b33636] hover:bg-[#fdeeee]">
+              <Trash2 className="size-3.5" /> Delete
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {questionnaire.questions.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {questionnaire.questions.map((q) => (
+            <div key={q.id} className="rounded-lg border border-[#edf0ef] bg-white p-3">
+              <div className="flex items-start gap-3">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#fff3d6] text-[#9a6a05]">
+                  <ShieldCheck className="size-3.5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm leading-5 text-[#3d5153]">{q.question}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-[#607477]">Options:</span>
+                    {q.options.map((opt, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 rounded-full border border-[#d8e2e0] px-2 py-0.5 text-[10px] font-bold text-[#142238]">
+                        {String.fromCharCode(65 + i)}. {opt}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </article>

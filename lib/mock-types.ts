@@ -30,3 +30,18 @@ export type SavedMockTest = {
   passMark: number
   createdAt: string
 }
+
+export type CategoryExcelImportState = {
+  status: 'idle' | 'success' | 'error'
+  message: string
+  questions: ParsedMockQuestion[]
+  warnings: string[]
+  suggestedTitle: string
+  fileName: string
+  categoryId: string
+}
+
+export type CategoryExcelSaveState = {
+  status: 'idle' | 'success' | 'error'
+  message: string
+}

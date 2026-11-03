@@ -1,5 +1,5 @@
 import { createClient, type Client } from '@libsql/client'
-import type { AdminUser, StudyModule, StudyModuleFile, StudyCategory, CategoryQuestion } from '@/lib/types'
+import type { AdminUser, StudyModule, StudyModuleFile, StudyCategory, CategoryQuestion, StudyQuestionnaire, StudyQuestionnaireQuestion } from '@/lib/types'
 import type { ParsedMockQuestion, SavedMockTest } from '@/lib/mock-types'
 import type { LearnerAccess, LearnerDevice, LearnerPlan } from '@/lib/access-types'
 
@@ -170,6 +170,7 @@ export async function getStudyCategories(): Promise<StudyCategory[]> {
   try {
     return await withRetry(async () => {
       await ensureStudyModulesTable()
+      await ensureStudyQuestionnairesTable()
       const categoriesResult = await db().execute(`
         SELECT c.id, c.title, c.description, c.created_at, c.updated_at
         FROM study_categories c
@@ -177,8 +178,8 @@ export async function getStudyCategories(): Promise<StudyCategory[]> {
       `)
       const categoryIds = categoriesResult.rows.map((row) => String(row.id ?? ''))
 
-      // Load all modules and all questions in parallel (2 batches instead of N+1 sequential)
-      const [modulesResults, questionsResults] = await Promise.all([
+      // Load all modules, questions, and questionnaires in parallel (3 batches instead of N+1 sequential)
+      const [modulesResults, questionsResults, questionnaireResults] = await Promise.all([
         Promise.all(
           categoryIds.map((id) =>
             db().execute({
@@ -195,11 +196,20 @@ export async function getStudyCategories(): Promise<StudyCategory[]> {
             })
           )
         ),
+        Promise.all(
+          categoryIds.map((id) =>
+            db().execute({
+              sql: 'SELECT id, category_id, title, description, question_count, created_at, updated_at FROM study_questionnaires WHERE category_id = ? ORDER BY created_at ASC',
+              args: [id],
+            })
+          )
+        ),
       ])
 
       // Build lookup maps keyed by category id
       const modulesByCategory = new Map<string, StudyModule[]>()
       const questionsByCategory = new Map<string, CategoryQuestion[]>()
+      const questionnairesByCategory = new Map<string, StudyQuestionnaire[]>()
 
       categoryIds.forEach((id, idx) => {
         modulesByCategory.set(
@@ -227,7 +237,62 @@ export async function getStudyCategories(): Promise<StudyCategory[]> {
             createdAt: String(qrow.created_at ?? ''),
           }))
         )
+
+        questionnairesByCategory.set(
+          id,
+          questionnaireResults[idx].rows.map((qrow) => ({
+            id: String(qrow.id ?? ''),
+            categoryId: String(qrow.category_id ?? ''),
+            title: String(qrow.title ?? ''),
+            description: qrow.description === null || qrow.description === undefined ? null : String(qrow.description),
+            questionCount: toNumber(qrow.question_count),
+            questions: [],
+            createdAt: String(qrow.created_at ?? ''),
+            updatedAt: String(qrow.updated_at ?? ''),
+          }))
+        )
       })
+
+      // Load questions for each questionnaire (batched per category to avoid N+1)
+      const allQuestionnaireIds: string[] = []
+      questionnairesByCategory.forEach((questionnaires) => {
+        questionnaires.forEach((q) => allQuestionnaireIds.push(q.id))
+      })
+
+      if (allQuestionnaireIds.length > 0) {
+        const questionnaireQuestionResults = await Promise.all(
+          allQuestionnaireIds.map((qid) =>
+            db().execute({
+              sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
+              args: [qid],
+            })
+          )
+        )
+
+        allQuestionnaireIds.forEach((qid, idx) => {
+          const questions = questionnaireQuestionResults[idx].rows.map((qrow) => ({
+            id: String(qrow.id ?? ''),
+            questionnaireId: String(qrow.questionnaire_id ?? ''),
+            question: String(qrow.question ?? ''),
+            options: (() => {
+              try {
+                return JSON.parse(String(qrow.options_json ?? '[]')) as string[]
+              } catch {
+                return []
+              }
+            })(),
+            correctAnswer: String(qrow.correct_answer ?? ''),
+            position: toNumber(qrow.position),
+            createdAt: String(qrow.created_at ?? ''),
+          }))
+
+          // Find which category this questionnaire belongs to and attach questions
+          questionnairesByCategory.forEach((categoryQuestionnaires) => {
+            const q = categoryQuestionnaires.find((q) => q.id === qid)
+            if (q) q.questions = questions
+          })
+        })
+      }
 
       const categories: StudyCategory[] = []
       for (const row of categoriesResult.rows) {
@@ -238,6 +303,7 @@ export async function getStudyCategories(): Promise<StudyCategory[]> {
           description: row.description === null || row.description === undefined ? null : String(row.description),
           modules: modulesByCategory.get(id) ?? [],
           questions: questionsByCategory.get(id) ?? [],
+          questionnaires: questionnairesByCategory.get(id) ?? [],
           createdAt: String(row.created_at ?? ''),
           updatedAt: String(row.updated_at ?? ''),
         })
@@ -254,10 +320,12 @@ export async function getStudyCategory(categoryId: string): Promise<{
   category: StudyCategory | null
   modules: StudyModule[]
   questions: CategoryQuestion[]
+  questionnaires: StudyQuestionnaire[]
 } | null> {
   try {
     return await withRetry(async () => {
       await ensureStudyModulesTable()
+      await ensureStudyQuestionnairesTable()
       const categoryResult = await db().execute({
         sql: 'SELECT id, title, description, created_at, updated_at FROM study_categories WHERE id = ?',
         args: [categoryId],
@@ -293,17 +361,55 @@ export async function getStudyCategory(categoryId: string): Promise<{
         createdAt: String(row.created_at ?? ''),
       }))
 
+      const questionnairesResult = await db().execute({
+        sql: 'SELECT id, category_id, title, description, question_count, created_at, updated_at FROM study_questionnaires WHERE category_id = ? ORDER BY created_at ASC',
+        args: [categoryId],
+      })
+      const questionnaires: StudyQuestionnaire[] = []
+      for (const qrow of questionnairesResult.rows) {
+        const qid = String(qrow.id ?? '')
+        const qQuestionsResult = await db().execute({
+          sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
+          args: [qid],
+        })
+        questionnaires.push({
+          id: qid,
+          categoryId: String(qrow.category_id ?? ''),
+          title: String(qrow.title ?? ''),
+          description: qrow.description === null || qrow.description === undefined ? null : String(qrow.description),
+          questionCount: toNumber(qrow.question_count),
+          questions: qQuestionsResult.rows.map((qrow2) => ({
+            id: String(qrow2.id ?? ''),
+            questionnaireId: String(qrow2.questionnaire_id ?? ''),
+            question: String(qrow2.question ?? ''),
+            options: (() => {
+              try {
+                return JSON.parse(String(qrow2.options_json ?? '[]')) as string[]
+              } catch {
+                return []
+              }
+            })(),
+            correctAnswer: String(qrow2.correct_answer ?? ''),
+            position: toNumber(qrow2.position),
+            createdAt: String(qrow2.created_at ?? ''),
+          })),
+          createdAt: String(qrow.created_at ?? ''),
+          updatedAt: String(qrow.updated_at ?? ''),
+        })
+      }
+
       const category: StudyCategory = {
         id: String(categoryRow.id ?? ''),
         title: String(categoryRow.title ?? ''),
         description: categoryRow.description === null || categoryRow.description === undefined ? null : String(categoryRow.description),
         modules,
         questions,
+        questionnaires,
         createdAt: String(categoryRow.created_at ?? ''),
         updatedAt: String(categoryRow.updated_at ?? ''),
       }
 
-      return { category, modules, questions }
+      return { category, modules, questions, questionnaires }
     })
   } catch (error) {
     console.error(`Could not load study category ${categoryId}:`, error)
@@ -340,14 +446,21 @@ export async function updateStudyCategory(input: {
 export async function deleteStudyCategory(categoryId: string) {
   await withRetry(async () => {
     await ensureStudyModulesTable()
-    await db().batch(
-      [
-        { sql: 'DELETE FROM study_category_questions WHERE category_id = ?', args: [categoryId] },
-        { sql: 'DELETE FROM study_modules WHERE category_id = ?', args: [categoryId] },
-        { sql: 'DELETE FROM study_categories WHERE id = ?', args: [categoryId] },
-      ],
-      'write',
-    )
+    await ensureStudyQuestionnairesTable()
+    // Delete all questionnaires and their questions for this category first
+    const questionnaires = await db().execute({
+      sql: 'SELECT id FROM study_questionnaires WHERE category_id = ?',
+      args: [categoryId],
+    })
+    const statements: Array<{ sql: string; args: (string | number | null)[] }> = []
+    for (const q of questionnaires.rows) {
+      statements.push({ sql: 'DELETE FROM study_questionnaire_questions WHERE questionnaire_id = ?', args: [String(q.id)] })
+    }
+    statements.push({ sql: 'DELETE FROM study_questionnaires WHERE category_id = ?', args: [categoryId] })
+    statements.push({ sql: 'DELETE FROM study_category_questions WHERE category_id = ?', args: [categoryId] })
+    statements.push({ sql: 'DELETE FROM study_modules WHERE category_id = ?', args: [categoryId] })
+    statements.push({ sql: 'DELETE FROM study_categories WHERE id = ?', args: [categoryId] })
+    await db().batch(statements, 'write')
   })
 }
 
@@ -380,6 +493,216 @@ export async function deleteCategoryQuestion(questionId: string) {
     await ensureStudyModulesTable()
     await db().execute({ sql: 'DELETE FROM study_category_questions WHERE id = ?', args: [questionId] })
   })
+}
+
+// ============ Study Questionnaires ============
+
+let questionnairesTablesReady = false
+
+async function ensureStudyQuestionnairesTable() {
+  if (questionnairesTablesReady) return
+  await db().execute(`CREATE TABLE IF NOT EXISTS study_questionnaires (
+    id TEXT PRIMARY KEY,
+    category_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    question_count INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`)
+  await db().execute(
+    'CREATE INDEX IF NOT EXISTS study_questionnaires_category_idx ON study_questionnaires (category_id)',
+  )
+  await db().execute(`CREATE TABLE IF NOT EXISTS study_questionnaire_questions (
+    id TEXT PRIMARY KEY,
+    questionnaire_id TEXT NOT NULL,
+    question TEXT NOT NULL,
+    options_json TEXT NOT NULL,
+    correct_answer TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  )`)
+  await db().execute(
+    'CREATE INDEX IF NOT EXISTS study_questionnaire_questions_questionnaire_idx ON study_questionnaire_questions (questionnaire_id)',
+  )
+  questionnairesTablesReady = true
+}
+
+export async function getStudyQuestionnairesByCategory(categoryId: string): Promise<StudyQuestionnaire[]> {
+  try {
+    return await withRetry(async () => {
+      await ensureStudyQuestionnairesTable()
+      const result = await db().execute({
+        sql: 'SELECT id, category_id, title, description, question_count, created_at, updated_at FROM study_questionnaires WHERE category_id = ? ORDER BY created_at ASC',
+        args: [categoryId],
+      })
+      const questionnaires: StudyQuestionnaire[] = []
+      for (const row of result.rows) {
+        const id = String(row.id ?? '')
+        const questionsResult = await db().execute({
+          sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
+          args: [id],
+        })
+        questionnaires.push({
+          id,
+          categoryId: String(row.category_id ?? ''),
+          title: String(row.title ?? ''),
+          description: row.description === null || row.description === undefined ? null : String(row.description),
+          questionCount: toNumber(row.question_count),
+          questions: questionsResult.rows.map((qrow) => ({
+            id: String(qrow.id ?? ''),
+            questionnaireId: String(qrow.questionnaire_id ?? ''),
+            question: String(qrow.question ?? ''),
+            options: (() => {
+              try {
+                return JSON.parse(String(qrow.options_json ?? '[]')) as string[]
+              } catch {
+                return []
+              }
+            })(),
+            correctAnswer: String(qrow.correct_answer ?? ''),
+            position: toNumber(qrow.position),
+            createdAt: String(qrow.created_at ?? ''),
+          })),
+          createdAt: String(row.created_at ?? ''),
+          updatedAt: String(row.updated_at ?? ''),
+        })
+      }
+      return questionnaires
+    })
+  } catch (error) {
+    console.error(`Could not load questionnaires for category ${categoryId}:`, error)
+    return []
+  }
+}
+
+export async function getStudyQuestionnaireById(questionnaireId: string): Promise<StudyQuestionnaire | null> {
+  try {
+    return await withRetry(async () => {
+      await ensureStudyQuestionnairesTable()
+      const result = await db().execute({
+        sql: 'SELECT id, category_id, title, description, question_count, created_at, updated_at FROM study_questionnaires WHERE id = ?',
+        args: [questionnaireId],
+      })
+      const row = result.rows[0]
+      if (!row) return null
+
+      const questionsResult = await db().execute({
+        sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
+        args: [questionnaireId],
+      })
+      return {
+        id: String(row.id ?? ''),
+        categoryId: String(row.category_id ?? ''),
+        title: String(row.title ?? ''),
+        description: row.description === null || row.description === undefined ? null : String(row.description),
+        questionCount: toNumber(row.question_count),
+        questions: questionsResult.rows.map((qrow) => ({
+          id: String(qrow.id ?? ''),
+          questionnaireId: String(qrow.questionnaire_id ?? ''),
+          question: String(qrow.question ?? ''),
+          options: (() => {
+            try {
+              return JSON.parse(String(qrow.options_json ?? '[]')) as string[]
+            } catch {
+              return []
+            }
+          })(),
+          correctAnswer: String(qrow.correct_answer ?? ''),
+          position: toNumber(qrow.position),
+          createdAt: String(qrow.created_at ?? ''),
+        })),
+        createdAt: String(row.created_at ?? ''),
+        updatedAt: String(row.updated_at ?? ''),
+      }
+    })
+  } catch (error) {
+    console.error(`Could not load questionnaire ${questionnaireId}:`, error)
+    return null
+  }
+}
+
+export async function addStudyQuestionnaire(input: {
+  id: string
+  categoryId: string
+  title: string
+  description?: string | null
+}) {
+  await ensureStudyQuestionnairesTable()
+  const now = new Date().toISOString()
+  await db().execute({
+    sql: 'INSERT INTO study_questionnaires (id, category_id, title, description, question_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    args: [input.id, input.categoryId, input.title, input.description ?? null, 0, now, now],
+  })
+}
+
+export async function addStudyQuestionnaireQuestion(input: {
+  id: string
+  questionnaireId: string
+  question: string
+  options: string[]
+  correctAnswer: string
+}) {
+  await ensureStudyQuestionnairesTable()
+  const now = new Date().toISOString()
+  const last = await db().execute({
+    sql: 'SELECT COALESCE(MAX(position), 0) AS max_pos FROM study_questionnaire_questions WHERE questionnaire_id = ?',
+    args: [input.questionnaireId],
+  })
+  const position = toNumber(last.rows[0].max_pos) + 1
+
+  await db().execute({
+    sql: 'INSERT INTO study_questionnaire_questions (id, questionnaire_id, question, options_json, correct_answer, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    args: [input.id, input.questionnaireId, input.question, JSON.stringify(input.options), input.correctAnswer, position, now],
+  })
+
+  await db().execute({
+    sql: 'UPDATE study_questionnaires SET question_count = question_count + 1, updated_at = ? WHERE id = ?',
+    args: [now, input.questionnaireId],
+  })
+}
+
+export async function deleteStudyQuestionnaire(questionnaireId: string) {
+  await withRetry(async () => {
+    await ensureStudyQuestionnairesTable()
+    await db().batch(
+      [
+        { sql: 'DELETE FROM study_questionnaire_questions WHERE questionnaire_id = ?', args: [questionnaireId] },
+        { sql: 'DELETE FROM study_questionnaires WHERE id = ?', args: [questionnaireId] },
+      ],
+      'write',
+    )
+  })
+}
+
+export async function addStudyQuestionnaireWithQuestions(input: {
+  id: string
+  categoryId: string
+  title: string
+  description?: string | null
+  questions: Array<{ question: string; options: string[]; correctAnswer: string; explanation?: string }>
+}) {
+  await ensureStudyQuestionnairesTable()
+  const now = new Date().toISOString()
+
+  const statements: Array<{ sql: string; args: (string | number | null)[] }> = [
+    {
+      sql: 'INSERT INTO study_questionnaires (id, category_id, title, description, question_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      args: [input.id, input.categoryId, input.title, input.description ?? null, input.questions.length, now, now],
+    },
+  ]
+
+  let position = 0
+  for (const q of input.questions) {
+    position++
+    const qid = `${input.id}-q-${crypto.randomUUID().slice(0, 8)}`
+    statements.push({
+      sql: 'INSERT INTO study_questionnaire_questions (id, questionnaire_id, question, options_json, correct_answer, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      args: [qid, input.id, q.question, JSON.stringify(q.options), q.correctAnswer, position, now],
+    })
+  }
+
+  await db().batch(statements, 'write')
 }
 
 // ============ End of new functions ============

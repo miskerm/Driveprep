@@ -16,12 +16,34 @@ export type StudyModuleFile = {
   fileUrl: string | null
 }
 
+export type StudyQuestionnaireQuestion = {
+  id: string
+  questionnaireId: string
+  question: string
+  options: string[]
+  correctAnswer: string
+  position: number
+  createdAt: string
+}
+
+export type StudyQuestionnaire = {
+  id: string
+  categoryId: string
+  title: string
+  description: string | null
+  questionCount: number
+  questions: StudyQuestionnaireQuestion[]
+  createdAt: string
+  updatedAt: string
+}
+
 export type StudyCategory = {
   id: string
   title: string
   description: string | null
   modules: StudyModule[]
   questions: CategoryQuestion[]
+  questionnaires: StudyQuestionnaire[]
   createdAt: string
   updatedAt: string
 }
