@@ -5,25 +5,25 @@ import { MeasureGuard } from '@/components/measure-guard'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'DrivoPrep | Code 2 Mock Test',
-  description: 'Practice your South African learner licence Code 2 driving test with DrivoPrep.',
+  title: "Selam Learner's",
+  description: "Practice your Driver Licence Examination with Selam Learner's.",
   generator: 'v0.app',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/selamlogo1.png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/selamlogo1.png',
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
+        url: '/selamlogo1.png',
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/selamlogo1.png',
   },
 }
 

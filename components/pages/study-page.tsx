@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ArrowLeft, BookOpen, FileText, List, ShieldCheck, ExternalLink } from 'lucide-react'
+import { ArrowLeft, BookOpen, ChevronDown, ChevronUp, FileText, List, ExternalLink } from 'lucide-react'
 import type { StudyCategory } from '@/lib/types'
 
 function formatDate(value: string) {
@@ -70,9 +70,9 @@ export function StudyPage({ categories }: { categories: StudyCategory[] }) {
                       aria-label={openCategory === category.id ? 'Close category' : 'Open category'}
                     >
                       {openCategory === category.id ? (
-                        <ShieldCheck className="size-4" />
+                        <ChevronUp className="size-4" />
                       ) : (
-                        <ShieldCheck className="size-4" />
+                        <ChevronDown className="size-4" />
                       )}
                     </button>
                   </div>

@@ -1,13 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { BookOpen, CircleHelp, Pencil, ShieldCheck, Trophy } from 'lucide-react'
 
-const dashboardImage = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/photo_2026-10-16_21-35-23-B3Fy090WLgQF1rIrdkIYWaoi8lMye7.jpg'
+const dashboardImage = '/dashboard_image.png'
 
 export function Landing() {
-  const router = useRouter()
 
   return (
     <>
@@ -17,7 +15,7 @@ export function Landing() {
             Get ready<br />for your<br />learner&apos;s<br />test
           </h1>
           <p className="mt-6 max-w-[500px] text-lg leading-8 text-[#203c58]">
-            A mobile-first study app with practice-style questions, clear explanations, and a full mock test simulation.
+            A Drivers Licence study app with practice-style questions, clear explanations, and a full mock test simulation.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/dashboard" className="rounded-lg bg-[#ff9318] px-4 py-3 font-semibold text-white">
@@ -106,9 +104,9 @@ export function Landing() {
             <div className="h-2 rounded-full bg-[#e4e9e8]"><div className="h-2 w-[70%] rounded-full bg-[#1a9d92]" /></div>
           </div>
           <div className="flex flex-col gap-3 p-2">
-            <Link href="/practice" className="rounded-lg border border-[#d2dfdc] p-3 text-left font-bold">Review wrong answers</Link>
-            <Link href="/practice" className="rounded-lg border border-[#d2dfdc] p-3 text-left font-bold">Practise Vehicle Controls</Link>
-            <button onClick={() => router.push('/full-mock')} className="rounded-lg border border-[#d2dfdc] p-3 text-left font-bold">Retake mock test</button>
+            <button type="button" className="rounded-lg border border-[#d2dfdc] p-3 text-left font-bold">Review wrong answers</button>
+            <button type="button" className="rounded-lg border border-[#d2dfdc] p-3 text-left font-bold">Practise Vehicle Controls</button>
+            <button type="button" className="rounded-lg border border-[#d2dfdc] p-3 text-left font-bold">Retake mock test</button>
           </div>
         </div>
       </section>

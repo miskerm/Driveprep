@@ -15,8 +15,9 @@ import {
 } from 'lucide-react'
 import { useAuth, useProgress } from '@/components/providers'
 import { formatResultTime } from '@/lib/quiz-data'
+import type { StudyCategory } from '@/lib/types'
 
-export function Dashboard() {
+export function Dashboard({ categories }: { categories: StudyCategory[] }) {
   const { user, access, accessNotice } = useAuth()
   const { stats } = useProgress()
   const progressCaption = stats.overallProgress === 0 ? 'Start practising to track progress' : stats.overallProgress === 100 ? 'All questions completed!' : stats.overallProgress >= 50 ? 'Good progress!' : 'Keep going!'
@@ -170,7 +171,7 @@ export function Dashboard() {
           <div className="rounded-xl border border-[#dfe7e5] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold">Recent Results</h2>
-              <Link href="/practice" className="font-bold text-[#087f78]">View all results</Link>
+              
             </div>
             <div className="mt-5 flex flex-col gap-4">
               {stats.results.length === 0 ? (
@@ -193,15 +194,24 @@ export function Dashboard() {
               <h2 className="text-lg font-extrabold">Focus Areas</h2>
               <Link href="/study" className="font-bold text-[#087f78]">View all topics</Link>
             </div>
-            <div className="mt-5 flex flex-col gap-5">
-              {stats.topicStats.map((topic) => (
-                <Link key={topic.name} href="/practice" className="text-left">
-                  <div className="flex justify-between text-sm font-bold"><span>{topic.name}</span><span>{topic.mastery}%</span></div>
-                  <div className="mt-2 h-2 rounded-full bg-[#e6e9e8]">
-                    <div className={`h-2 rounded-full ${topic.mastery >= 75 ? 'bg-[#23a36c]' : topic.mastery >= 50 ? 'bg-[#f4b928]' : 'bg-[#ef514c]'}`} style={{ width: `${topic.mastery}%` }} />
-                  </div>
-                </Link>
-              ))}
+            <div className="mt-5 flex flex-col gap-4">
+              {categories.length === 0 ? (
+                <p className="text-sm font-semibold text-[#718181]">No categories yet. Your instructor will add study categories.</p>
+              ) : (
+                categories.map((category) => (
+                  <Link key={category.id} href={`/study?category=${category.id}`} className="text-left">
+                    <div className="flex justify-between text-sm font-bold">
+                      <span>{category.title}</span>
+                      <span>
+                        {category.modules.length + category.questionnaires.length} item{category.modules.length + category.questionnaires.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 rounded-full bg-[#e6e9e8]">
+                      <div className="h-2 rounded-full bg-[#168f82]" style={{ width: '100%' }} />
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
           <div className="rounded-xl border border-[#dfe7e5] bg-white p-5 shadow-sm">
@@ -240,7 +250,7 @@ export function Dashboard() {
             )}
           </div>
         </section>
-        <div className="mt-5 rounded-xl border border-[#dfe7e5] bg-white p-5 text-sm font-semibold text-[#53686a] shadow-sm">SA Learners is here to help you become a confident and responsible driver. Always remember: roads are shared. Drive safe, stay alert, stay alive.</div>
+        <div className="mt-5 rounded-xl border border-[#dfe7e5] bg-white p-5 text-sm font-semibold text-[#53686a] shadow-sm">Selam Learner's is here to help you become a confident and responsible driver. Always remember: roads are shared. Drive safe, stay alert, stay alive.</div>
       </div>
     </main>
   )
