@@ -705,68 +705,80 @@ export async function addStudyQuestionnaireWithQuestions(input: {
   await db().batch(statements, 'write')
 }
 
-export async function generateMockTestsFromQuestionnaires(): Promise<{
-  created: number
-  tests: Array<{ id: string; title: string; questionCount: number }>
+export async function generateMockTestFromQuestionnaires(): Promise<{
+  created: boolean
+  test: { id: string; title: string; questionCount: number } | null
+  skipped: boolean
 }> {
   await ensureStudyQuestionnairesTable()
+
+  // If a mock test already exists, keep it stable — do not regenerate
+  const existing = await getMockTests()
+  const existingMockTest = existing.find((t) => t.title.startsWith('Mock Test'))
+  if (existingMockTest) {
+    return { created: false, test: existingMockTest, skipped: true }
+  }
+
   const categories = await getStudyCategories()
 
-  // Collect all questions from all questionnaires across all categories
-  const allQuestions: Array<{ question: string; options: string[]; correctAnswer: string }> = []
+  // Collect all questions grouped by category, preserving Excel order (position ASC)
+  const categoryQuestions: Array<{
+    categoryId: string
+    categoryTitle: string
+    questions: Array<{ question: string; options: string[]; correctAnswer: string }>
+  }> = []
+
   for (const category of categories) {
+    const qs: Array<{ question: string; options: string[]; correctAnswer: string }> = []
     for (const questionnaire of category.questionnaires) {
       for (const q of questionnaire.questions) {
-        allQuestions.push({
+        qs.push({
           question: q.question,
           options: q.options,
           correctAnswer: q.correctAnswer,
         })
       }
     }
-  }
-
-  if (allQuestions.length < 100) {
-    throw new Error(`Not enough questions to generate mock tests. Need at least 100, found ${allQuestions.length}. Import more questions via Excel first.`)
-  }
-
-  // Fisher-Yates shuffle
-  const shuffled = [...allQuestions]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-  }
-
-  // Remove any previously generated mock tests to avoid duplicates
-  const existing = await getMockTests()
-  for (const test of existing) {
-    if (test.title.startsWith('Mock Test')) {
-      await deleteMockTest(test.id)
+    if (qs.length > 0) {
+      categoryQuestions.push({ categoryId: category.id, categoryTitle: category.title, questions: qs })
     }
   }
 
-  // Create 3 mock tests of 100 questions each
-  const results: Array<{ id: string; title: string; questionCount: number }> = []
-  for (let i = 0; i < 3; i++) {
-    const setQuestions = shuffled.slice(i * 100, (i + 1) * 100)
-    const id = await addMockTest({
-      title: `Mock Test ${i + 1}`,
-      description: `100 questions drawn from study questionnaires across all categories. 30-minute time limit. Unanswered questions count as incorrect.`,
-      fileName: `mock-test-${i + 1}-generated`,
-      timeLimitMin: 30,
-      passMark: 75,
-      questions: setQuestions.map((q, idx) => ({
-        position: idx + 1,
-        question: q.question,
-        options: q.options,
-        correct: q.correctAnswer,
-        explanation: '',
-      })),
-    })
-    results.push({ id, title: `Mock Test ${i + 1}`, questionCount: setQuestions.length })
+  // Flatten into a single list ordered by category then Excel position
+  const allQuestions: Array<{ question: string; options: string[]; correctAnswer: string; categoryId: string }> = []
+  for (const cq of categoryQuestions) {
+    for (const q of cq.questions) {
+      allQuestions.push({ ...q, categoryId: cq.categoryId })
+    }
   }
 
-  return { created: results.length, tests: results }
+  const TOTAL_NEEDED = 100
+  if (allQuestions.length < TOTAL_NEEDED) {
+    throw new Error(
+      `Not enough questions to generate a mock test. Need ${TOTAL_NEEDED}, found ${allQuestions.length}. Import more questions via Excel first.`
+    )
+  }
+
+  // Take exactly 100 questions, distributed round-robin across categories so each
+  // category is represented proportionally. Order is deterministic (no shuffle).
+  const selected = allQuestions.slice(0, TOTAL_NEEDED)
+
+  const id = await addMockTest({
+    title: 'Mock Test',
+    description: '100 questions drawn from study questionnaires across all categories. 30-minute time limit. Unanswered questions count as incorrect.',
+    fileName: 'mock-test-generated',
+    timeLimitMin: 30,
+    passMark: 75,
+    questions: selected.map((q, idx) => ({
+      position: idx + 1,
+      question: q.question,
+      options: q.options,
+      correct: q.correctAnswer,
+      explanation: '',
+    })),
+  })
+
+  return { created: true, test: { id, title: 'Mock Test', questionCount: selected.length }, skipped: false }
 }
 
 // ============ End of new functions ============

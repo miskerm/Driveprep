@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { parseMockWorkbook } from '@/lib/mock-excel'
-import { addMockTest, deleteMockTest, generateMockTestsFromQuestionnaires } from '@/lib/db'
+import { addMockTest, deleteMockTest, generateMockTestFromQuestionnaires } from '@/lib/db'
 import { requireAdmin } from '@/lib/session'
 import type { MockImportState, MockSaveState, ParsedMockQuestion } from '@/lib/mock-types'
 
@@ -166,32 +166,38 @@ export async function deleteMockTestAction(formData: FormData) {
   }
 }
 
-export type GenerateMockTestsState = {
+export type GenerateMockTestState = {
   status: 'idle' | 'success' | 'error'
   message: string
 }
 
-const idleGenerate: GenerateMockTestsState = { status: 'idle', message: '' }
+const idleGenerate: GenerateMockTestState = { status: 'idle', message: '' }
 
-export async function generateMockTestsAction(
-  _previousState: GenerateMockTestsState,
+export async function generateMockTestAction(
+  _previousState: GenerateMockTestState,
   formData: FormData,
-): Promise<GenerateMockTestsState> {
+): Promise<GenerateMockTestState> {
   await requireAdmin()
 
   try {
-    const result = await generateMockTestsFromQuestionnaires()
+    const result = await generateMockTestFromQuestionnaires()
     revalidatePath('/admin/mock-tests')
     revalidatePath('/mock-tests')
+    if (result.skipped) {
+      return {
+        status: 'success',
+        message: `Mock test already exists: “${result.test?.title}”. It has ${result.test?.questionCount} questions with a 30-minute time limit.`,
+      }
+    }
     return {
       status: 'success',
-      message: `Generated ${result.created} mock tests: ${result.tests.map((t) => t.title).join(', ')}. Each has 100 questions with a 30-minute time limit.`,
+      message: `Generated “${result.test?.title}” with ${result.test?.questionCount} questions and a 30-minute time limit.`,
     }
   } catch (error) {
-    console.error('Failed to generate mock tests:', error)
+    console.error('Failed to generate mock test:', error)
     return {
       status: 'error',
-      message: error instanceof Error ? error.message : 'Failed to generate mock tests. Make sure you have at least 100 questions imported via Excel.',
+      message: error instanceof Error ? error.message : 'Failed to generate mock test. Make sure you have at least 100 questions imported via Excel across your categories.',
     }
   }
 }

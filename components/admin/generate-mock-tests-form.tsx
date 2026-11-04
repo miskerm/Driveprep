@@ -1,16 +1,15 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState } from 'react'
 import Link from 'next/link'
-import { Play, RefreshCw, ShieldCheck } from 'lucide-react'
-import { generateMockTestsAction } from '@/app/admin/mock-tests/actions'
+import { RefreshCw, ShieldCheck } from 'lucide-react'
+import { generateMockTestAction } from '@/app/admin/mock-tests/actions'
 
 export function GenerateMockTestsForm() {
   const [generateState, generateAction, generating] = useActionState(
-    generateMockTestsAction,
+    generateMockTestAction,
     { status: 'idle', message: '' } as { status: 'idle' | 'success' | 'error'; message: string },
   )
-  const [showGenerated, setShowGenerated] = useState(false)
 
   return (
     <section className="mb-8 rounded-xl border border-[#d8e2e0] bg-white p-6 shadow-sm">
@@ -20,10 +19,10 @@ export function GenerateMockTestsForm() {
             <RefreshCw className="size-5" />
           </span>
           <div>
-            <h2 className="text-lg font-extrabold text-[#142238]">Generate Mock Tests from Questionnaires</h2>
+            <h2 className="text-lg font-extrabold text-[#142238]">Generate Mock Test from Questionnaires</h2>
             <p className="mt-1 text-sm text-[#607477]">
-              Extract questions from all imported study questionnaires, shuffle them, and create three 100-question
-              mock tests (Mock Test 1, 2, 3) with a 30-minute time limit each.
+              Extract questions from all imported study questionnaires and create one 100-question mock test
+              with a 30-minute time limit.
             </p>
           </div>
         </div>
@@ -36,7 +35,7 @@ export function GenerateMockTestsForm() {
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#d79a0b] px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           <RefreshCw className="size-4" />
-          {generating ? 'Generating…' : 'Generate 3 Mock Tests (100 questions each)'}
+          {generating ? 'Generating…' : 'Generate Mock Test (100 questions)'}
         </button>
         {generateState.status === 'success' && (
           <p className="flex items-start gap-2 rounded-lg p-3 text-sm font-semibold bg-[#e6f5f3] text-[#06625e]">
