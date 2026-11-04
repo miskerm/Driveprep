@@ -37,7 +37,7 @@ export function SiteHeader() {
             </div>
             <div>
               <div className="text-[16px] font-extrabold">Selam Learner's</div>
-              <div className="text-xs text-[#677775]">Get ready for your learners licence</div>
+              <div className="text-xs text-[#677775]">Get ready for your Drivers licence</div>
             </div>
           </Link>
 

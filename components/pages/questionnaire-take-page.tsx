@@ -45,8 +45,17 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
   const isAnswered = (questionId: string) => !!answers[questionId]
   const getSelected = (questionId: string) => answers[questionId] ?? ''
 
+  // Correct answer is stored as option text (e.g. "Paris"), convert to letter (A/B/C/D) for comparison
+  const getCorrectLetter = (q: StudyQuestionnaireQuestion): string | null => {
+    const idx = q.options.indexOf(q.correctAnswer)
+    return idx >= 0 ? String.fromCharCode(65 + idx) : null
+  }
+
   const correctCount = submitted
-    ? questions.reduce((sum, q) => (answers[q.id] === q.correctAnswer ? sum + 1 : sum), 0)
+    ? questions.reduce((sum, q) => {
+        const correctLetter = getCorrectLetter(q)
+        return correctLetter && answers[q.id] === correctLetter ? sum + 1 : sum
+      }, 0)
     : 0
 
   if (loading) {
@@ -118,7 +127,7 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
                 onClick={() => setCurrent(index)}
                 className={`rounded-md border px-1 py-1 text-xs font-bold transition-colors ${
                   submitted
-                    ? answers[q.id] === q.correctAnswer
+                    ? getCorrectLetter(q) === answers[q.id]
                       ? 'border-[#10b981] bg-[#dcfce7] text-[#166534]'
                       : 'border-[#ef4444] bg-[#fee2e2] text-[#991b1b]'
                     : index === current
@@ -217,9 +226,10 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
               <div className="mt-6 space-y-3">
                 {questions.map((q) => {
                   const userAnswer = answers[q.id]
-                  const isCorrect = userAnswer === q.correctAnswer
+                  const correctLetter = getCorrectLetter(q)
+                  const isCorrect = userAnswer === correctLetter
                   const userOptionIndex = userAnswer ? userAnswer.charCodeAt(0) - 65 : -1
-                  const correctOptionIndex = q.correctAnswer ? q.correctAnswer.charCodeAt(0) - 65 : -1
+                  const correctOptionIndex = correctLetter ? correctLetter.charCodeAt(0) - 65 : -1
                   return (
                     <div key={q.id} className="text-left rounded-lg border p-3 animate-in fade-in slide-in-from-right-1 duration-300">
                       <p className="text-sm font-semibold text-[#3d5153] mb-2">{q.question}</p>
@@ -230,9 +240,9 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
                         {!isCorrect && (
                           <>
                             <span className="text-[#607477]">Your answer:</span>
-                            <span className="text-[#991b1b]">{userAnswer ? `${String.fromCharCode(65 + userOptionIndex)}. ${q.options[userOptionIndex]}` : 'No answer'}</span>
+                            <span className="text-[#991b1b]">{userAnswer ? `${userAnswer}. ${q.options[userOptionIndex]}` : 'No answer'}</span>
                             <span className="text-[#607477] ml-2">Correct:</span>
-                            <span className="text-[#166534]">{`${String.fromCharCode(65 + correctOptionIndex)}. ${q.options[correctOptionIndex]}`}</span>
+                            <span className="text-[#166534]">{`${correctLetter}. ${q.options[correctOptionIndex]}`}</span>
                           </>
                         )}
                       </div>
