@@ -58,14 +58,14 @@ function toBytes(value: unknown): Uint8Array {
   return new Uint8Array()
 }
 
-async function withRetry<T>(operation: () => Promise<T>, attempts = 5): Promise<T> {
+async function withRetry<T>(operation: () => Promise<T>, attempts = 3): Promise<T> {
   let lastError: unknown
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       return await operation()
     } catch (error) {
       lastError = error
-      if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)))
+      if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)))
     }
   }
   throw lastError
@@ -365,20 +365,20 @@ export async function getStudyCategory(categoryId: string): Promise<{
         sql: 'SELECT id, category_id, title, description, question_count, created_at, updated_at FROM study_questionnaires WHERE category_id = ? ORDER BY created_at ASC',
         args: [categoryId],
       })
+      const questionnaireRows = questionnairesResult.rows
       const questionnaires: StudyQuestionnaire[] = []
-      for (const qrow of questionnairesResult.rows) {
-        const qid = String(qrow.id ?? '')
-        const qQuestionsResult = await db().execute({
-          sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
-          args: [qid],
-        })
-        questionnaires.push({
-          id: qid,
-          categoryId: String(qrow.category_id ?? ''),
-          title: String(qrow.title ?? ''),
-          description: qrow.description === null || qrow.description === undefined ? null : String(qrow.description),
-          questionCount: toNumber(qrow.question_count),
-          questions: qQuestionsResult.rows.map((qrow2) => ({
+      if (questionnaireRows.length > 0) {
+        const questionnaireQuestionResults = await Promise.all(
+          questionnaireRows.map((qrow) =>
+            db().execute({
+              sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
+              args: [String(qrow.id ?? '')],
+            })
+          )
+        )
+        questionnaireRows.forEach((qrow, idx) => {
+          const qid = String(qrow.id ?? '')
+          const questions = questionnaireQuestionResults[idx].rows.map((qrow2) => ({
             id: String(qrow2.id ?? ''),
             questionnaireId: String(qrow2.questionnaire_id ?? ''),
             question: String(qrow2.question ?? ''),
@@ -392,9 +392,17 @@ export async function getStudyCategory(categoryId: string): Promise<{
             correctAnswer: String(qrow2.correct_answer ?? ''),
             position: toNumber(qrow2.position),
             createdAt: String(qrow2.created_at ?? ''),
-          })),
-          createdAt: String(qrow.created_at ?? ''),
-          updatedAt: String(qrow.updated_at ?? ''),
+          }))
+          questionnaires.push({
+            id: qid,
+            categoryId: String(qrow.category_id ?? ''),
+            title: String(qrow.title ?? ''),
+            description: qrow.description === null || qrow.description === undefined ? null : String(qrow.description),
+            questionCount: toNumber(qrow.question_count),
+            questions,
+            createdAt: String(qrow.created_at ?? ''),
+            updatedAt: String(qrow.updated_at ?? ''),
+          })
         })
       }
 
