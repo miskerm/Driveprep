@@ -81,6 +81,61 @@ export function Landing() {
           ))}
         </div>
       </section>
+
+      <section className="mx-auto mb-12 grid max-w-[1280px] gap-8 items-center lg:grid-cols-[1fr_1fr]">
+        <div className="order-2 lg:order-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/traffic-lights.png" alt="Traffic lights at a road intersection" className="w-full rounded-xl shadow-[0_24px_60px_rgba(20,55,60,.12)]" />
+        </div>
+        <div className="order-1 lg:order-2 flex flex-col justify-center lg:text-left text-center lg:text-left">
+          <h2 className="text-2xl font-extrabold text-[#142238] mb-3">Understand traffic lights</h2>
+          <p className="mt-3 text-[#53686a] leading-7">
+            Know exactly what red, yellow, and green mean — plus flashing signals and pedestrian crossings — so you&apos;re never caught off guard at an intersection.
+          </p>
+          <ul className="mt-6 flex flex-col gap-3 text-sm font-semibold text-[#53686a]">
+            <li>✓ Solid red, yellow, and green signals</li>
+            <li>✓ Flashing arrow and beacon lights</li>
+            <li>✓ Pedestrian crossing signals</li>
+          </ul>
+        </div>
+      </section>
+
+      <section className="mx-auto mb-12 grid max-w-[1280px] gap-8 items-center lg:grid-cols-[1fr_1fr]">
+        <div className="flex flex-col justify-center text-center lg:text-left">
+          <h2 className="text-2xl font-extrabold text-[#142238] mb-3">Master vehicle controls</h2>
+          <p className="mt-3 text-[#53686a] leading-7">
+            From steering and pedals to mirrors and indicators — learn every control inside the car so you drive with confidence from day one.
+          </p>
+          <ul className="mt-6 flex flex-col gap-3 text-sm font-semibold text-[#53686a]">
+            <li>✓ Steering, accelerator, brake &amp; clutch</li>
+            <li>✓ Mirrors, indicators, and wipers</li>
+            <li>✓ Dashboard gauges and warning lights</li>
+          </ul>
+        </div>
+        <div className="order-2 lg:order-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/cars.png" alt="Cars on a city road" className="w-full rounded-xl shadow-[0_24px_60px_rgba(20,55,60,.12)]" />
+        </div>
+      </section>
+
+      <section className="mx-auto mb-12 grid max-w-[1280px] gap-8 items-center lg:grid-cols-[1fr_1fr]">
+        <div className="order-2 lg:order-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/road-signs.png" alt="Road signs on a street" className="w-full rounded-xl shadow-[0_24px_60px_rgba(20,55,60,.12)]" />
+        </div>
+        <div className="order-1 lg:order-2 flex flex-col justify-center lg:text-left text-center lg:text-left">
+          <h2 className="text-2xl font-extrabold text-[#142238] mb-3">Know your road signs</h2>
+          <p className="mt-3 text-[#53686a] leading-7">
+            Learn the meaning behind warning, regulatory, and information signs — from speed limits to pedestrian crossings — so you can read the road at a glance.
+          </p>
+          <ul className="mt-6 flex flex-col gap-3 text-sm font-semibold text-[#53686a]">
+            <li>✓ Warning signs and hazard markers</li>
+            <li>✓ Regulatory signs and speed limits</li>
+            <li>✓ Information and direction signs</li>
+          </ul>
+        </div>
+      </section>
+
       <section className="mx-auto mb-12 grid max-w-[1280px] gap-6 rounded-xl border border-[#c8dfdc] bg-[#effafa] p-8 lg:grid-cols-[1fr_1.4fr] lg:items-center">
         <div>
           <h2 className="text-2xl font-extrabold">Your progress, all in one place</h2>
