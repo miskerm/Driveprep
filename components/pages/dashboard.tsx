@@ -118,24 +118,24 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
 
         <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           <Feature
-            title="Study"
-            text="Read clear notes on signs, rules, and vehicle controls."
+            title=" Study (የትምህርት ሞጁሎች)"
+            text="የመንገድ ምልክቶችን፣ የትራፊክ ሕጎችን እና የተሽከርካሪ መቆጣጠሪያ ክፍሎችን በተደራጀ መልኩ ያጥኑ።"
             action={premium ? 'Start Studying' : 'Unlock with Premium'}
             icon={BookOpen}
             tone="teal"
             href={premium ? '/study' : paymentHref}
           />
           <Feature
-            title="Practice"
-            text="Answer learner-style questions and check your understanding."
+            title="Practice (የልምምድ ጥያቄዎች)"
+            text="ፈተና ደረጃን የጠበቁ የልምምድ ጥያቄዎችን በመመለስ የእውቀትና የግንዛቤ ደረጃዎን ያረጋግጡ።"
             action={premium ? 'Start Practicing' : 'Unlock with Premium'}
             icon={Pencil}
             tone="blue"
             href={premium ? '/practice' : paymentHref}
           />
           <Feature
-            title="Full Mock Test"
-            text="Complete a full simulation with progress and results."
+            title="Full Mock Test (ሙሉ የማስመሰያ ፈተና)"
+            text="እውነተኛውን የቲዮሪ ፈተና በጊዜ ገደብ፣ በሂደት ሰሌዳ እና በዝርዝር ውጤት ትንተና ይውሰዱ።"
             action={access?.restricted ? 'Premium restricted' : premium ? 'Start Mock Test' : 'Unlock with Premium'}
             icon={ClipboardList}
             tone="coral"
