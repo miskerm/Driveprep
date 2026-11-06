@@ -527,9 +527,16 @@ async function ensureStudyQuestionnairesTable() {
     question TEXT NOT NULL,
     options_json TEXT NOT NULL,
     correct_answer TEXT NOT NULL,
+    explanation TEXT NOT NULL DEFAULT '',
     position INTEGER NOT NULL,
     created_at TEXT NOT NULL
   )`)
+  // Ensure explanation column exists on pre-existing tables (from migration v10)
+  try {
+    await db().execute('ALTER TABLE study_questionnaire_questions ADD COLUMN explanation TEXT NOT NULL DEFAULT \'\'')
+  } catch {
+    // Column already exists — safe to ignore
+  }
   await db().execute(
     'CREATE INDEX IF NOT EXISTS study_questionnaire_questions_questionnaire_idx ON study_questionnaire_questions (questionnaire_id)',
   )
@@ -548,7 +555,7 @@ export async function getStudyQuestionnairesByCategory(categoryId: string): Prom
       for (const row of result.rows) {
         const id = String(row.id ?? '')
         const questionsResult = await db().execute({
-          sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
+          sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, explanation, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
           args: [id],
         })
         questionnaires.push({
@@ -569,6 +576,7 @@ export async function getStudyQuestionnairesByCategory(categoryId: string): Prom
               }
             })(),
             correctAnswer: String(qrow.correct_answer ?? ''),
+            explanation: String(qrow.explanation ?? ''),
             position: toNumber(qrow.position),
             createdAt: String(qrow.created_at ?? ''),
           })),
@@ -596,7 +604,7 @@ export async function getStudyQuestionnaireById(questionnaireId: string): Promis
       if (!row) return null
 
       const questionsResult = await db().execute({
-        sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
+        sql: 'SELECT id, questionnaire_id, question, options_json, correct_answer, explanation, position, created_at FROM study_questionnaire_questions WHERE questionnaire_id = ? ORDER BY position ASC, created_at ASC',
         args: [questionnaireId],
       })
       return {
@@ -617,6 +625,7 @@ export async function getStudyQuestionnaireById(questionnaireId: string): Promis
             }
           })(),
           correctAnswer: String(qrow.correct_answer ?? ''),
+          explanation: String(qrow.explanation ?? ''),
           position: toNumber(qrow.position),
           createdAt: String(qrow.created_at ?? ''),
         })),
@@ -650,6 +659,7 @@ export async function addStudyQuestionnaireQuestion(input: {
   question: string
   options: string[]
   correctAnswer: string
+  explanation?: string
 }) {
   await ensureStudyQuestionnairesTable()
   const now = new Date().toISOString()
@@ -660,8 +670,8 @@ export async function addStudyQuestionnaireQuestion(input: {
   const position = toNumber(last.rows[0].max_pos) + 1
 
   await db().execute({
-    sql: 'INSERT INTO study_questionnaire_questions (id, questionnaire_id, question, options_json, correct_answer, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    args: [input.id, input.questionnaireId, input.question, JSON.stringify(input.options), input.correctAnswer, position, now],
+    sql: 'INSERT INTO study_questionnaire_questions (id, questionnaire_id, question, options_json, correct_answer, explanation, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [input.id, input.questionnaireId, input.question, JSON.stringify(input.options), input.correctAnswer, input.explanation ?? '', position, now],
   })
 
   await db().execute({
@@ -705,8 +715,8 @@ export async function addStudyQuestionnaireWithQuestions(input: {
     position++
     const qid = `${input.id}-q-${crypto.randomUUID().slice(0, 8)}`
     statements.push({
-      sql: 'INSERT INTO study_questionnaire_questions (id, questionnaire_id, question, options_json, correct_answer, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      args: [qid, input.id, q.question, JSON.stringify(q.options), q.correctAnswer, position, now],
+      sql: 'INSERT INTO study_questionnaire_questions (id, questionnaire_id, question, options_json, correct_answer, explanation, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [qid, input.id, q.question, JSON.stringify(q.options), q.correctAnswer, q.explanation ?? '', position, now],
     })
   }
 

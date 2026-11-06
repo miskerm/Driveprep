@@ -402,6 +402,16 @@ const migrations: Migration[] = [
     },
   },
   {
+    version: 11,
+    name: 'add-explanation-to-questionnaire-questions',
+    up: async () => {
+      const columns = await tableColumns('study_questionnaire_questions')
+      if (!columns.has('explanation')) {
+        await db().execute('ALTER TABLE study_questionnaire_questions ADD COLUMN explanation TEXT NOT NULL DEFAULT \'\'')
+      }
+    },
+  },
+  {
     version: 9,
     name: 'ensure-learner-device-unique',
     up: async () => {

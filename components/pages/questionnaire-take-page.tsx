@@ -2,13 +2,19 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Clock3, List, ShieldCheck, X, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Clock3, List, ShieldCheck, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 import type { StudyQuestionnaire, StudyQuestionnaireQuestion } from '@/lib/types'
 
 async function fetchQuestionnaire(questionnaireId: string): Promise<StudyQuestionnaire | null> {
   const res = await fetch(`/api/questionnaires/${questionnaireId}`, { cache: 'no-store' })
   if (!res.ok) return null
   return res.json()
+}
+
+function formatTime(seconds: number) {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
 export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: string }) {
@@ -38,25 +44,26 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
     loadQuestionnaire()
   }, [loadQuestionnaire])
 
-  const selectAnswer = (option: string) => {
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: option }))
-  }
-
-  const isAnswered = (questionId: string) => !!answers[questionId]
-  const getSelected = (questionId: string) => answers[questionId] ?? ''
-
   // Correct answer is stored as option text (e.g. "Paris"), convert to letter (A/B/C/D) for comparison
   const getCorrectLetter = (q: StudyQuestionnaireQuestion): string | null => {
     const idx = q.options.indexOf(q.correctAnswer)
     return idx >= 0 ? String.fromCharCode(65 + idx) : null
   }
 
-  const correctCount = submitted
-    ? questions.reduce((sum, q) => {
-        const correctLetter = getCorrectLetter(q)
-        return correctLetter && answers[q.id] === correctLetter ? sum + 1 : sum
-      }, 0)
-    : 0
+  const isAnswered = (questionId: string) => !!answers[questionId]
+  const getSelected = (questionId: string) => answers[questionId] ?? ''
+
+  const correctCount = questions.reduce((sum, q) => {
+    const correctLetter = getCorrectLetter(q)
+    return correctLetter && answers[q.id] === correctLetter ? sum + 1 : sum
+  }, 0)
+
+  const allAnswered = questions.every((q) => isAnswered(q.id))
+
+  const selectAnswer = (option: string) => {
+    if (isAnswered(currentQuestion.id)) return // lock: already answered
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: option }))
+  }
 
   if (loading) {
     return (
@@ -92,6 +99,12 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
     )
   }
 
+  const currentCorrectLetter = getCorrectLetter(currentQuestion)
+  const currentUserAnswer = answers[currentQuestion.id]
+  const currentIsCorrect = currentUserAnswer === currentCorrectLetter
+  const currentUserOptionIndex = currentUserAnswer ? currentUserAnswer.charCodeAt(0) - 65 : -1
+  const currentCorrectOptionIndex = currentCorrectLetter ? currentCorrectLetter.charCodeAt(0) - 65 : -1
+
   return (
     <main className="min-h-screen bg-[#f6faf9] text-[#142238]">
       <div className="border-b border-[#e3e8e6] bg-white">
@@ -121,29 +134,36 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
         <aside className="rounded-xl border border-[#dfe7e6] bg-white p-3">
           <h2 className="font-extrabold text-lg">Questions ({total})</h2>
           <div className="mt-4 grid grid-cols-8 gap-2">
-            {questions.map((q, index) => (
-              <button
-                key={q.id}
-                onClick={() => setCurrent(index)}
-                className={`rounded-md border px-1 py-1 text-xs font-bold transition-colors ${
-                  submitted
-                    ? getCorrectLetter(q) === answers[q.id]
-                      ? 'border-[#10b981] bg-[#dcfce7] text-[#166534]'
-                      : 'border-[#ef4444] bg-[#fee2e2] text-[#991b1b]'
-                    : index === current
-                      ? 'border-[#e5bc45] bg-[#fff8da]'
-                      : isAnswered(q.id)
-                        ? 'border-[#bce3df] bg-[#e6f5f3] text-[#106c69]'
+            {questions.map((q, index) => {
+              const answered = isAnswered(q.id)
+              const correctLetter = getCorrectLetter(q)
+              const isCorrect = answered && correctLetter && answers[q.id] === correctLetter
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => setCurrent(index)}
+                  className={`rounded-md border px-1 py-1 text-xs font-bold transition-colors ${
+                    index === current
+                      ? answered
+                        ? isCorrect
+                          ? 'border-[#10b981] bg-[#dcfce7] text-[#166534]'
+                          : 'border-[#ef4444] bg-[#fee2e2] text-[#991b1b]'
+                        : 'border-[#e5bc45] bg-[#fff8da]'
+                      : answered
+                        ? isCorrect
+                          ? 'border-[#10b981] bg-[#dcfce7] text-[#166534]'
+                          : 'border-[#ef4444] bg-[#fee2e2] text-[#991b1b]'
                         : 'border-[#dbe8e6] bg-white text-[#116c69]'
-                }`}
-              >
-                Q{index + 1}
-              </button>
-            ))}
+                  }`}
+                >
+                  Q{index + 1}
+                </button>
+              )
+            })}
           </div>
           <div className="mt-5 rounded-lg bg-[#f3faf9] p-3 text-xs leading-5">
             <List className="mr-2 inline size-5 text-[#1fa39d]" />
-            <b>Tip:</b> You can jump between questions anytime.
+            <b>Tip:</b> Select an answer to see instant feedback. Each question locks once answered.
           </div>
         </aside>
 
@@ -153,7 +173,15 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
             <>
               <div className="mb-4 flex justify-end gap-3">
                 {current === total - 1 ? (
-                  <button onClick={() => setSubmitted(true)} className="rounded-lg bg-[#cf2638] px-4 py-2.5 font-semibold text-white">
+                  <button
+                    onClick={() => setSubmitted(true)}
+                    disabled={!isAnswered(currentQuestion.id)}
+                    className={`rounded-lg px-4 py-2.5 font-semibold text-white transition ${
+                      !isAnswered(currentQuestion.id)
+                        ? 'bg-[#cbd5d0] cursor-not-allowed'
+                        : 'bg-[#cf2638]'
+                    }`}
+                  >
                     Submit questionnaire
                   </button>
                 ) : (
@@ -187,28 +215,105 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
                   {currentQuestion.options.map((option, i) => {
                     const letter = String.fromCharCode(65 + i)
                     const selected = getSelected(currentQuestion.id)
+                    const isSelected = selected === letter
+                    const isCorrect = currentCorrectLetter === letter
+                    const answered = isAnswered(currentQuestion.id)
+
+                    // Determine styling based on answer state
+                    let optionClass = 'flex cursor-pointer items-center gap-4 rounded-lg border-2 p-4 transition-colors duration-300'
+                    let icon: React.ReactNode = null
+
+                    if (answered) {
+                      if (isSelected && isCorrect) {
+                        optionClass += ' border-[#10b981] bg-[#dcfce7]'
+                        icon = <CheckCircle2 className="size-5 text-[#166534]" />
+                      } else if (isSelected && !isCorrect) {
+                        optionClass += ' border-[#ef4444] bg-[#fee2e2]'
+                        icon = <XCircle className="size-5 text-[#991b1b]" />
+                      } else if (isCorrect) {
+                        optionClass += ' border-[#10b981] bg-[#dcfce7]/50'
+                        icon = <CheckCircle2 className="size-5 text-[#166534]" />
+                      } else {
+                        optionClass += ' border-[#d8e2e0] bg-white opacity-60'
+                      }
+                    } else if (isSelected) {
+                      optionClass += ' border-[#168f82] bg-[#e6f5f3]'
+                    }
+
                     return (
                       <label
                         key={option}
                         onClick={() => selectAnswer(letter)}
-                        className={`flex cursor-pointer items-center gap-4 rounded-lg border-2 p-4 transition-colors ${
-                          selected === letter
-                            ? 'border-[#168f82] bg-[#e6f5f3]'
-                            : 'border-[#d8e2e0] bg-white'
-                        }`}
+                        className={optionClass}
                       >
                         <input
                           type="radio"
                           name={`q-${currentQuestion.id}`}
                           readOnly
-                          checked={selected === letter}
+                          disabled={answered}
+                          checked={isSelected}
                           className="size-5 accent-[#168f82]"
                         />
                         <span className="font-semibold">{option}</span>
+                        {icon && <span className="ml-auto">{icon}</span>}
                       </label>
                     )
                   })}
                 </div>
+
+                {/* Instant feedback + explanation (shown after answering) */}
+                {isAnswered(currentQuestion.id) && currentCorrectLetter && (
+                  <div className="mt-6 rounded-lg p-4 transition-all duration-300">
+                    {currentIsCorrect ? (
+                      <div className="border border-[#10b981] bg-[#dcfce7] rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2 className="mt-0.5 size-5 text-[#166534] shrink-0" />
+                          <div>
+                            <h3 className="font-bold text-[#166534] text-sm">Correct! Well done.</h3>
+                            <p className="mt-1 text-sm text-[#166534]">
+                              {`“${currentQuestion.options[currentUserOptionIndex]}” is the correct answer.`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border border-[#ef4444] bg-[#fee2e2] rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <XCircle className="mt-0.5 size-5 text-[#991b1b] shrink-0" />
+                          <div>
+                            <h3 className="font-bold text-[#991b1b] text-sm">
+                              Incorrect. Don&apos;t worry, learn from the explanation below.
+                            </h3>
+                            <p className="mt-1 text-sm text-[#991b1b]">
+                              {`“${currentQuestion.options[currentUserOptionIndex]}” is not the correct answer.`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Explanation section */}
+                    {currentQuestion.explanation && currentQuestion.explanation.trim() !== '' && (
+                      <div className="mt-4 rounded-lg border border-[#e3e8e6] bg-[#f8fafc] p-4">
+                        <div className="flex items-start gap-2 mb-2">
+                          <AlertTriangle className="size-4 text-[#087f78] shrink-0" />
+                          <h4 className="font-bold text-sm text-[#142238]">Explanation</h4>
+                        </div>
+                        <p className="text-sm text-[#3d5153] leading-6">{currentQuestion.explanation}</p>
+                      </div>
+                    )}
+
+                    {!currentQuestion.explanation || currentQuestion.explanation.trim() === '' && (
+                      <div className="mt-4 rounded-lg border border-[#e3e8e6] bg-[#f8fafc] p-4">
+                        <div className="flex items-start gap-2 mb-2">
+                          <AlertTriangle className="size-4 text-[#087f78] shrink-0" />
+                          <h4 className="font-bold text-sm text-[#142238]">Explanation</h4>
+                        </div>
+                        <p className="text-sm text-[#6b7280]">No explanation available for this question.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
             </>
           ) : (
@@ -223,33 +328,63 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
               <p className="mt-2 text-sm text-[#607477]">
                 {Math.round((correctCount / total) * 100)}% correct
               </p>
-              <div className="mt-6 space-y-3">
-                {questions.map((q) => {
-                  const userAnswer = answers[q.id]
-                  const correctLetter = getCorrectLetter(q)
-                  const isCorrect = userAnswer === correctLetter
-                  const userOptionIndex = userAnswer ? userAnswer.charCodeAt(0) - 65 : -1
-                  const correctOptionIndex = correctLetter ? correctLetter.charCodeAt(0) - 65 : -1
-                  return (
-                    <div key={q.id} className="text-left rounded-lg border p-3 animate-in fade-in slide-in-from-right-1 duration-300">
-                      <p className="text-sm font-semibold text-[#3d5153] mb-2">{q.question}</p>
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className={`font-bold ${isCorrect ? 'text-[#166534]' : 'text-[#991b1b]'}`}>
-                          {isCorrect ? '✓ Correct' : '✗ Incorrect'}
-                        </span>
-                        {!isCorrect && (
-                          <>
-                            <span className="text-[#607477]">Your answer:</span>
-                            <span className="text-[#991b1b]">{userAnswer ? `${userAnswer}. ${q.options[userOptionIndex]}` : 'No answer'}</span>
-                            <span className="text-[#607477] ml-2">Correct:</span>
-                            <span className="text-[#166534]">{`${correctLetter}. ${q.options[correctOptionIndex]}`}</span>
-                          </>
+
+              {/* Question-by-question summary */}
+              <div className="mt-8 space-y-3">
+                <h3 className="text-sm font-extrabold text-[#142238] uppercase tracking-wider">
+                  Review your answers
+                </h3>
+                <div className="space-y-3">
+                  {questions.map((q) => {
+                    const userAnswer = answers[q.id]
+                    const correctLetter = getCorrectLetter(q)
+                    const isCorrect = userAnswer === correctLetter
+                    const userOptionIndex = userAnswer ? userAnswer.charCodeAt(0) - 65 : -1
+                    const correctOptionIndex = correctLetter ? correctLetter.charCodeAt(0) - 65 : -1
+                    return (
+                      <div
+                        key={q.id}
+                        className={`rounded-lg border p-4 ${isCorrect ? 'border-[#10b981] bg-[#dcfce7]/30' : 'border-[#ef4444] bg-[#fee2e2]/30'}`}
+                      >
+                        <div className="flex items-start gap-2 mb-2">
+                          <span
+                            className={`font-bold text-xs ${isCorrect ? 'text-[#166534]' : 'text-[#991b1b]'}`}
+                          >{isCorrect ? '✓' : '✗'}</span
+                          >
+                          <p className="text-sm font-semibold text-[#142238]">{q.question}</p>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className={`font-bold ${isCorrect ? 'text-[#166534]' : 'text-[#991b1b]'}`}>
+                            {isCorrect ? 'Correct' : 'Incorrect'}
+                          </span>
+                          {!isCorrect && (
+                            <>
+                              <span className="text-[#6b7280] ml-2">Your answer:</span>
+                              <span className="text-[#991b1b] ml-1">
+                                {userAnswer ? `${String.fromCharCode(65 + userOptionIndex)}. ${q.options[userOptionIndex]}` : 'No answer'}
+                              </span>
+                              <span className="text-[#6b7280] ml-2">Correct:</span>
+                              <span className="text-[#166534] ml-1">
+                                {`${correctLetter}. ${q.options[correctOptionIndex]}`}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        {q.explanation && q.explanation.trim() !== '' && (
+                          <div className="mt-3 rounded-lg border border-[#e3e8e6] bg-[#f8fafc] p-3">
+                            <div className="flex items-start gap-2 mb-1">
+                              <AlertTriangle className="size-4 text-[#087f78] shrink-0" />
+                              <h4 className="font-bold text-xs text-[#142238]">Explanation</h4>
+                            </div>
+                            <p className="text-xs text-[#3d5153] leading-5">{q.explanation}</p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
+
               <div className="mt-6 flex gap-3 justify-center">
                 <Link
                   href="/study"

@@ -22,6 +22,7 @@ export type StudyQuestionnaireQuestion = {
   question: string
   options: string[]
   correctAnswer: string
+  explanation: string
   position: number
   createdAt: string
 }
