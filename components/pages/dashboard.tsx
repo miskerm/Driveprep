@@ -10,7 +10,6 @@ import {
   Pencil,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth, useProgress } from '@/components/providers'
@@ -39,10 +38,6 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
             <ArrowLeft className="size-4" aria-hidden="true" />
             Back to home
           </Link>
-          <Link href={premium ? '/quizzes' : paymentHref} className="flex items-center gap-2">
-            <Sparkles className="size-4" />
-            Start Quick Quiz
-          </Link>
           <Link href="/streak" className="flex items-center gap-2">
             <Flame className="size-4 text-[#ff7d55]" />
             {stats.streak} Day Streak
@@ -67,7 +62,7 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
         <p className="mt-4 max-w-2xl text-[#53686a]">
           {premium || user?.role === 'admin'
             ? 'All premium learning features are unlocked on your account.'
-            : 'Study, Practice, Full Mock Tests, and Quick Quizzes unlock after your manual payment is verified by an administrator.'}
+            : 'Study, Practice, and Full Mock Tests unlock after your manual payment is verified by an administrator.'}
         </p>
 
         {user && user.role !== 'admin' && !premium && (
@@ -140,14 +135,6 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
             icon={ClipboardList}
             tone="coral"
             href={premium ? '/mock-tests' : paymentHref}
-          />
-          <Feature
-            title="Quick Quiz"
-            text="Try a short warm-up question to test your knowledge."
-            action={premium ? 'Start Quick Quiz' : 'Unlock with Premium'}
-            icon={Sparkles}
-            tone="gold"
-            href={premium ? '/quizzes' : paymentHref}
           />
         </div>
 
@@ -222,7 +209,7 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
                   Premium active
                 </h2>
                 <p className="mt-4 text-sm font-semibold leading-6 text-[#53686a]">
-                  Your account has full access to study materials, practice questions, mock tests, and quick quizzes.
+                  Your account has full access to study materials, practice questions, and mock tests.
                 </p>
                 <ul className="mt-5 flex flex-col gap-3 text-sm font-semibold text-[#53686a]">
                   <li>✓ Unlimited practice questions</li>

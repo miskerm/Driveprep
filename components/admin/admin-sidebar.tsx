@@ -12,7 +12,6 @@ import {
   Menu,
   Pencil,
   ShieldCheck,
-  Sparkles,
   Users,
   X,
 } from 'lucide-react'
@@ -25,7 +24,6 @@ const items: { href: string; label: string; description: string; icon: LucideIco
   { href: '/admin/questionnaires', label: 'Add Questionnaire', description: 'Build questionnaires', icon: FileText },
   { href: '/admin/practice', label: 'Add Practice', description: 'Build practice sets', icon: Pencil },
   { href: '/admin/mock-tests', label: 'Add Mock Test', description: 'Create mock exams', icon: ClipboardList },
-  { href: '/admin/quizzes', label: 'Add Quizzes', description: 'Build quick quizzes', icon: Sparkles },
 ]
 
 export function AdminSidebar() {

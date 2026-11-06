@@ -180,7 +180,6 @@ export default async function AdminUsersPage({
             <Link href="/admin/modules" className="rounded-lg bg-[#168f82] px-4 py-2.5 text-sm font-bold text-white">Add Study Module</Link>
             <Link href="/admin/practice" className="rounded-lg bg-[#1784c0] px-4 py-2.5 text-sm font-bold text-white">Add Practice</Link>
             <Link href="/admin/mock-tests" className="rounded-lg bg-[#ef6a57] px-4 py-2.5 text-sm font-bold text-white">Add Mock Test</Link>
-            <Link href="/admin/quizzes" className="rounded-lg bg-[#d79a0b] px-4 py-2.5 text-sm font-bold text-white">Add Quiz</Link>
           </div>
         </div>
         <div className="rounded-xl border border-[#d8e2e0] bg-white p-6 shadow-sm">
