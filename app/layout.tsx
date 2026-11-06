@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Providers } from '@/components/providers'
+import { Footer } from '@/components/footer'
 import { MeasureGuard } from '@/components/measure-guard'
 import './globals.css'
 
@@ -45,6 +46,7 @@ export default function RootLayout({
       <body className="antialiased">
         {process.env.NODE_ENV === 'development' && <MeasureGuard />}
         <Providers>{children}</Providers>
+        <Footer />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
