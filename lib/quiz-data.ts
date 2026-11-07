@@ -73,18 +73,6 @@ export function dayKey(date: Date) {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }
 
-export function computeStreak(activeDays: string[]) {
-  const days = new Set(activeDays)
-  const cursor = new Date()
-  if (!days.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1)
-  let streak = 0
-  while (days.has(dayKey(cursor))) {
-    streak++
-    cursor.setDate(cursor.getDate() - 1)
-  }
-  return streak
-}
-
 export function computeStats(progress: ProgressState) {
   const topicStats = practiceTopics.map((topic) => {
     const keys = topic.questions.map((question) => `${topic.name}:${question.id}`)
@@ -99,7 +87,6 @@ export function computeStats(progress: ProgressState) {
     totalTopics: practiceTopics.length,
     questionsAnswered: progress.attempts,
     averageScore: progress.attempts ? Math.round((progress.correctAttempts / progress.attempts) * 100) : 0,
-    streak: computeStreak(progress.activeDays),
     topicStats,
     results: progress.results,
   }

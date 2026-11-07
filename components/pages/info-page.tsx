@@ -1,22 +1,20 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, Flame, Trophy } from 'lucide-react'
+import { ArrowLeft, Trophy } from 'lucide-react'
 import { useAuth, useProgress } from '@/components/providers'
 import { formatResultTime } from '@/lib/quiz-data'
 
-export type InfoPageKey = 'faq' | 'feedback' | 'streak' | 'notifications' | 'account'
+export type InfoPageKey = 'faq' | 'feedback' | 'notifications' | 'account'
 
 export function InfoPage({ page }: { page: InfoPageKey }) {
   const { user } = useAuth()
-  const { stats, notifications } = useProgress()
-  const streak = stats.streak
+  const { notifications } = useProgress()
   const contentByPage: Record<InfoPageKey, string[]> = {
     faq: ['Frequently asked questions', 'Find answers about studying, practice sessions, and mock test results.'],
     feedback: ['Share your feedback', 'Tell us what helped you prepare and what we can improve.'],
-    streak: ['Your learning streak', streak ? `You have practised for ${streak} day${streak === 1 ? '' : 's'} in a row. Keep going to build confident learner habits.` : 'Answer a practice question today to start your streak.'],
     notifications: ['Notifications', notifications.length ? 'Here is what you did in your practice sessions.' : 'No notifications yet. Finish or leave a practice topic and it will show up here.'],
-    account: [`${user?.name || 'Unknown'} account`, 'Your learner profile is active. Your progress, streak, and premium access are ready from this frontend dashboard.'],
+    account: [`${user?.name || 'Unknown'} account`, 'Your learner profile is active. Your progress and premium access are ready from this frontend dashboard.'],
   }
   const content = contentByPage[page]
 
@@ -30,20 +28,6 @@ export function InfoPage({ page }: { page: InfoPageKey }) {
         <p className="text-sm font-bold uppercase tracking-widest text-[#168f82]">DrivoPrep</p>
         <h1 className="mt-3 text-4xl font-extrabold">{content[0]}</h1>
         <p className="mt-4 text-lg leading-8 text-[#607477]">{content[1]}</p>
-        {page === 'streak' && (
-          <div className="mt-8">
-            <div className="flex items-end justify-between">
-              <span className="text-sm font-bold text-[#607477]">Day {Math.min(streak, 50)} of 50</span>
-              <Flame className="size-10 text-[#ff7d55]" />
-            </div>
-            <div className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-10">
-              {Array.from({ length: 50 }, (_, index) => (
-                <div key={index} className={`grid aspect-square place-items-center rounded-lg text-xs font-bold ${index < streak ? 'bg-[#ff7d55] text-white' : 'border border-[#d8e2e0] bg-[#f8fbfa] text-[#78908d]'}`}>{index + 1}</div>
-              ))}
-            </div>
-            <p className="mt-4 text-sm font-semibold text-[#087f78]">Keep practising daily to light up all 50 days.</p>
-          </div>
-        )}
         {page === 'notifications' && notifications.length > 0 && (
           <ul className="mt-8 flex flex-col gap-3">
             {notifications.map((item) => (

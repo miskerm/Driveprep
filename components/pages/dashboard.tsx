@@ -6,7 +6,6 @@ import {
   BookOpen,
   ClipboardList,
   CreditCard,
-  Flame,
   Pencil,
   ShieldAlert,
   ShieldCheck,
@@ -20,7 +19,6 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
   const { user, access, accessNotice } = useAuth()
   const { stats } = useProgress()
   const progressCaption = stats.overallProgress === 0 ? 'Start practising to track progress' : stats.overallProgress === 100 ? 'All questions completed!' : stats.overallProgress >= 50 ? 'Good progress!' : 'Keep going!'
-  const streakLabel = `${stats.streak} day${stats.streak === 1 ? '' : 's'}`
   const premium = user?.plan === 'premium_1000'
   const paymentHref = user?.paymentStatus === 'pending' ? '/payment/pending' : '/payment'
   const paymentLabel =
@@ -37,10 +35,6 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
           <Link href="/" className="mr-auto flex items-center gap-2 rounded-lg border border-[#bfcecb] px-4 py-2 font-semibold text-[#087f78]">
             <ArrowLeft className="size-4" aria-hidden="true" />
             Back to home
-          </Link>
-          <Link href="/streak" className="flex items-center gap-2">
-            <Flame className="size-4 text-[#ff7d55]" />
-            {stats.streak} Day Streak
           </Link>
           <Link href={user ? '/account' : '/login'} className="flex items-center gap-2">
             <span className="grid size-9 place-items-center rounded-full bg-[#0f928b] text-white">
@@ -144,7 +138,6 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
             ['Topics Completed', `${stats.topicsCompleted} / ${stats.totalTopics}`, 'Topics'],
             ['Practice Questions', String(stats.questionsAnswered), 'Answered'],
             ['Average Score', stats.questionsAnswered ? `${stats.averageScore}%` : '–', 'Across all practice'],
-            ['Current Streak', streakLabel, stats.streak ? 'Keep it going!' : 'Practise today to start'],
           ].map(([label, value, caption]) => (
             <div key={label} className="rounded-xl border border-[#dfe7e5] bg-white p-5 shadow-sm">
               <p className="text-sm font-bold text-[#53686a]">{label}</p>

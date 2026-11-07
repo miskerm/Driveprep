@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Dashboard | DrivoPrep',
-  description: 'Track your learner progress, streaks, and practice results.',
+  description: 'Track your learner progress and practice results.',
 }
 
 export default async function DashboardPage() {
