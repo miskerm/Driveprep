@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 import { ExternalLink, Mail, MessageCircle, Phone, Send } from 'lucide-react'
 
@@ -44,21 +42,15 @@ export function Footer() {
                 <Phone className="size-5 shrink-0 text-[#087f78]" />
                 <div>
                   <div className="text-sm text-[#94a3b8]">Phone</div>
-                  <div className="text-sm font-semibold text-[#f8fafc]">+251 11 123 4567</div>
+                  <div className="text-sm font-semibold text-[#f8fafc]">+251 905 991 745</div>
                 </div>
               </li>
-              <li className="flex items-start gap-3">
-                <Phone className="size-5 shrink-0 text-[#087f78]" />
-                <div>
-                  <div className="text-sm text-[#94a3b8]">Mobile</div>
-                  <div className="text-sm font-semibold text-[#f8fafc]">+251 91 123 4567</div>
-                </div>
-              </li>
+              
               <li className="flex items-start gap-3">
                 <Mail className="size-5 shrink-0 text-[#087f78]" />
                 <div>
                   <div className="text-sm text-[#94a3b8]">Email</div>
-                  <div className="text-sm font-semibold text-[#f8fafc]">info@selamlearners.com</div>
+                  <div className="text-sm font-semibold text-[#f8fafc]">mgwfalconengineering2022@gmail.com</div>
                 </div>
               </li>
             </ul>
@@ -66,15 +58,15 @@ export function Footer() {
 
           {/* Column 4: Social links */}
           <div>
-            <h3 className="text-sm font-extrabold text-[#f8fafc] mb-4 uppercase tracking-wider">Follow Us</h3>
+            <h3 className="text-sm font-extrabold text-[#f8fafc] mb-4 uppercase tracking-wider">Social Links</h3>
             <div className="flex gap-3">
               <a href="#" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Website">
                 <ExternalLink className="size-5" />
               </a>
-              <a href="#" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Messenger">
+              <a href="https://www.facebook.com/share/1DwBtCjUMM/?mibextid=wwXIfr" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Messenger">
                 <MessageCircle className="size-5" />
               </a>
-              <a href="#" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="WhatsApp">
+              <a href="https://t.me/ATDA2026" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="WhatsApp">
                 <Send className="size-5" />
               </a>
             </div>
