@@ -216,18 +216,10 @@ export default function TakeTestClient({
                             Q{r.position}. {r.question}
                           </p>
                           <p className="mt-1 text-xs text-[#607477]">
-                            Your answer:{' '}
-                            <span className={`font-bold ${r.userAnswer === r.correct ? 'text-[#23a36c]' : 'text-[#c24834]'}`}>
-                              {r.userAnswer ?? 'Not answered'}
+                            <span className={`font-bold ${r.isCorrect ? 'text-[#23a36c]' : 'text-[#c24834]'}`}>
+                              {r.isCorrect ? 'Correct' : 'Incorrect'}
                             </span>
-                            {r.isCorrect ? (
-                              <span className="ml-2 text-xs text-[#23a36c]">Correct</span>
-                            ) : (
-                              <span className="ml-2 text-xs text-[#c24834]">Incorrect</span>
-                            )}
-                            {!r.isCorrect && (
-                              <span className="ml-2 text-xs text-[#168f82]">Correct answer: {r.correct}</span>
-                            )}
+                            <span className="ml-2 text-xs text-[#168f82]">Correct answer: {r.correct}</span>
                           </p>
                           {r.explanation && (
                             <p className="mt-1 text-xs text-[#3d5153] bg-[#fbfdfc] rounded p-2">

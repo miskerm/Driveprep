@@ -351,10 +351,9 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
                 </h3>
                 <div className="space-y-3">
                   {questions.map((q) => {
-                    const userAnswer = answers[q.id]
                     const correctLetter = getCorrectLetter(q)
+                    const userAnswer = answers[q.id]
                     const isCorrect = userAnswer === correctLetter
-                    const userOptionIndex = userAnswer ? userAnswer.charCodeAt(0) - 65 : -1
                     const correctOptionIndex = correctLetter ? correctLetter.charCodeAt(0) - 65 : -1
                     return (
                       <div
@@ -372,18 +371,10 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
                           <span className={`font-bold ${isCorrect ? 'text-[#166534]' : 'text-[#991b1b]'}`}>
                             {isCorrect ? 'Correct' : 'Incorrect'}
                           </span>
-                          {!isCorrect && (
-                            <>
-                              <span className="text-[#6b7280] ml-2">Your answer:</span>
-                              <span className="text-[#991b1b] ml-1">
-                                {userAnswer ? `${String.fromCharCode(65 + userOptionIndex)}. ${q.options[userOptionIndex]}` : 'No answer'}
-                              </span>
-                              <span className="text-[#6b7280] ml-2">Correct:</span>
-                              <span className="text-[#166534] ml-1">
-                                {`${correctLetter}. ${q.options[correctOptionIndex]}`}
-                              </span>
-                            </>
-                          )}
+                          <span className="text-[#6b7280] ml-2">Correct answer:</span>
+                          <span className="text-[#166534] ml-1">
+                            {`${correctLetter}. ${q.options[correctOptionIndex]}`}
+                          </span>
                         </div>
                         {q.explanation && q.explanation.trim() !== '' && (
                           <div className="mt-3 rounded-lg border border-[#e3e8e6] bg-[#f8fafc] p-3">

@@ -36,7 +36,7 @@ export function PaymentPendingPage({
             <ArrowLeft className="size-4" />
             Back to dashboard
           </Link>
-          <span className="text-sm font-bold text-[#607477]">DrivoPrep payment</span>
+          <span className="text-sm font-bold text-[#607477]">Selam Learner's payment</span>
         </div>
       </div>
 

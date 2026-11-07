@@ -7,6 +7,8 @@ export type PaymentConfig = {
   bankName: string
   accountName: string
   accountNumber: string
+  telebirrAccountName: string
+  telebirrAccountNumber: string
   referenceNote: string
   configured: boolean
 }
@@ -22,6 +24,8 @@ export function getPaymentConfig(): PaymentConfig {
   const bankName = clean(process.env.PAYMENT_BANK_NAME)
   const accountName = clean(process.env.PAYMENT_ACCOUNT_NAME)
   const accountNumber = clean(process.env.PAYMENT_ACCOUNT_NUMBER)
+  const telebirrAccountName = clean(process.env.PAYMENT_TELEBIRR_ACCOUNT_NAME)
+  const telebirrAccountNumber = clean(process.env.PAYMENT_TELEBIRR_ACCOUNT_NUMBER)
   const referenceNote =
     clean(process.env.PAYMENT_REFERENCE_NOTE) ||
     'Use your full name and account email/phone as the payment reference.'
@@ -33,6 +37,8 @@ export function getPaymentConfig(): PaymentConfig {
     bankName,
     accountName,
     accountNumber,
+    telebirrAccountName,
+    telebirrAccountNumber,
     referenceNote,
     configured: amount > 0 && Boolean(bankName && accountName && accountNumber),
   }

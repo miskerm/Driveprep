@@ -72,12 +72,21 @@ export function PaymentInstructions({
 
             <h2 className="mt-8 text-xl font-extrabold">Bank transfer details</h2>
             {config.configured ? (
-              <dl className="mt-3 rounded-xl border border-[#e3e8e6] bg-[#f8fbfa] px-5 py-2">
-                <DetailRow label="Bank" value={config.bankName} />
-                <DetailRow label="Account name" value={config.accountName} />
-                <DetailRow label="Account number" value={config.accountNumber} />
-                <DetailRow label="Amount" value={config.amountLabel} />
-              </dl>
+              <>
+                <dl className="mt-3 rounded-xl border border-[#e3e8e6] bg-[#f8fbfa] px-5 py-2">
+                  <DetailRow label="Bank" value={config.bankName} />
+                  <DetailRow label="Account name" value={config.accountName} />
+                  <DetailRow label="Account number" value={config.accountNumber} />
+                  <DetailRow label="Amount" value={config.amountLabel} />
+                </dl>
+
+                <h2 className="mt-6 mb-1 text-xl font-extrabold">Telebirr</h2>
+                <dl className="mt-1 rounded-xl border border-[#e3e8e6] bg-[#f8fbfa] px-5 py-2">
+                  <DetailRow label="Account name" value={config.telebirrAccountName || '—'} />
+                  <DetailRow label="Account number" value={config.telebirrAccountNumber || '—'} />
+                  <DetailRow label="Amount" value={config.amountLabel} />
+                </dl>
+              </>
             ) : (
               <div className="mt-3 rounded-xl border border-[#f0c9c9] bg-[#fdf1f1] p-4 text-sm font-semibold text-[#a33b3b]">
                 Payment instructions are not configured yet. Please contact support before sending money.
@@ -112,11 +121,11 @@ export function PaymentInstructions({
               <ol className="mt-4 space-y-4 text-sm leading-6 text-[#3d5153]">
                 <li className="flex gap-3">
                   <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#e6f5f3] text-xs font-extrabold text-[#087f78]">1</span>
-                  Pay the exact amount to the bank account shown.
+                  Pay the exact amount to the bank or Telebirr account shown.
                 </li>
                 <li className="flex gap-3">
                   <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#e6f5f3] text-xs font-extrabold text-[#087f78]">2</span>
-                  Upload a clear screenshot of the payment confirmation. It is sent to our Telegram bot for review and is not stored in our database.
+                  Upload a clear screenshot of the payment confirmation.
                 </li>
                 <li className="flex gap-3">
                   <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#e6f5f3] text-xs font-extrabold text-[#087f78]">3</span>
@@ -124,7 +133,7 @@ export function PaymentInstructions({
                 </li>
                 <li className="flex gap-3">
                   <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#e6f5f3] text-xs font-extrabold text-[#087f78]">4</span>
-                  Once approved, Study, Practice, Full Mock Tests, and Quick Quizzes unlock automatically.
+                  Once approved, Study and Full Mock Tests unlock automatically.
                 </li>
               </ol>
             </section>
