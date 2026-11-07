@@ -315,6 +315,21 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
                   </div>
                 )}
               </section>
+
+              {/* Mobile floating Next button */}
+              {!submitted && (
+                <button
+                  onClick={() => setCurrent((c) => Math.min(c + 1, total - 1))}
+                  disabled={!isAnswered(currentQuestion.id)}
+                  className={`fixed bottom-6 right-6 z-50 rounded-lg px-5 py-2.5 font-semibold shadow-lg transition-colors ${
+                    !isAnswered(currentQuestion.id)
+                      ? 'bg-[#cbd5d0] text-[#718181] cursor-not-allowed border border-[#d8e2e0]'
+                      : 'bg-[#168f82] text-white'
+                  } sm:hidden`}
+                >
+                  {current === total - 1 ? 'Submit' : 'Next'}
+                </button>
+              )}
             </>
           ) : (
             <div className="rounded-xl border border-[#dfe7e6] bg-white p-7 text-center">
