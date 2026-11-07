@@ -42,7 +42,7 @@ export function SignupPage({ callbackUrl }: { callbackUrl: string }) {
               autoComplete="name"
               required
               maxLength={120}
-              placeholder="e.g. Lerato Mokoena"
+              placeholder="e.g. Selam Tadesse"
               className="mt-1.5 w-full rounded-lg border border-[#cbd9d7] px-4 py-3 outline-none focus:border-[#087f78] focus:ring-2 focus:ring-[#087f78]/20"
             />
             <FieldError message={state.fieldErrors?.name} />

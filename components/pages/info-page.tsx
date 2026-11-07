@@ -25,7 +25,7 @@ export function InfoPage({ page }: { page: InfoPageKey }) {
         Back to dashboard
       </Link>
       <section className="max-w-2xl rounded-2xl border border-[#d8e2e0] bg-white p-8 shadow-sm">
-        <p className="text-sm font-bold uppercase tracking-widest text-[#168f82]">DrivoPrep</p>
+        <p className="text-sm font-bold uppercase tracking-widest text-[#168f82]">Selam Learner's</p>
         <h1 className="mt-3 text-4xl font-extrabold">{content[0]}</h1>
         <p className="mt-4 text-lg leading-8 text-[#607477]">{content[1]}</p>
         {page === 'notifications' && notifications.length > 0 && (

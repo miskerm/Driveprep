@@ -3,8 +3,8 @@ import { SignupPage } from '@/components/pages/signup-page'
 import { safeCallbackUrl } from '@/lib/rate-limit'
 
 export const metadata: Metadata = {
-  title: 'Sign up | DrivoPrep',
-  description: 'Create your DrivoPrep learner account.',
+  title: "Sign up | Selam Learner's",
+  description: "Create your Selam Learne'r account.",
 }
 
 export default async function SignupRoute({

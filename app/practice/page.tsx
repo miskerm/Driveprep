@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { PracticePage } from '@/components/pages/practice-page'
-import { requirePremium } from '@/lib/session'
+import { requireUser } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +10,6 @@ export const metadata: Metadata = {
 }
 
 export default async function PracticeRoute() {
-  await requirePremium('/practice')
+  await requireUser('/practice')
   return <PracticePage />
 }

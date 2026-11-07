@@ -56,7 +56,7 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
         <p className="mt-4 max-w-2xl text-[#53686a]">
           {premium || user?.role === 'admin'
             ? 'All premium learning features are unlocked on your account.'
-            : 'Study, Practice, and Full Mock Tests unlock after your manual payment is verified by an administrator.'}
+            : 'Study, and Full Mock Tests unlock after your manual payment is verified by an administrator.'}
         </p>
 
         {user && user.role !== 'admin' && !premium && (
@@ -117,10 +117,10 @@ export function Dashboard({ categories }: { categories: StudyCategory[] }) {
           <Feature
             title="Practice (የልምምድ ጥያቄዎች)"
             text="ፈተና ደረጃን የጠበቁ የልምምድ ጥያቄዎችን በመመለስ የእውቀትና የግንዛቤ ደረጃዎን ያረጋግጡ።"
-            action={premium ? 'Start Practicing' : 'Unlock with Premium'}
+            action="Start Practicing"
             icon={Pencil}
             tone="blue"
-            href={premium ? '/practice' : paymentHref}
+            href="/practice"
           />
           <Feature
             title="Full Mock Test (ሙሉ የማስመሰያ ፈተና)"
