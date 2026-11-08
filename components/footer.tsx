@@ -1,5 +1,8 @@
 import Link from 'next/link'
 import { ExternalLink, Mail, MessageCircle, Phone, Send } from 'lucide-react'
+import { FaFacebook } from "react-icons/fa";
+import { MdEmail } from "react-icons/md";
+import { FaTelegram } from "react-icons/fa";
 
 export function Footer() {
   return (
@@ -60,14 +63,14 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-extrabold text-[#f8fafc] mb-4 uppercase tracking-wider">Social Links</h3>
             <div className="flex gap-3">
-              <a href="#" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Website">
-                <ExternalLink className="size-5" />
+              <a href="https://www.facebook.com/share/1DwBtCjUMM/?mibextid=wwXIfr" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Website">
+                <FaFacebook className="size-5" />
               </a>
-              <a href="https://www.facebook.com/share/1DwBtCjUMM/?mibextid=wwXIfr" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Messenger">
-                <MessageCircle className="size-5" />
+              <a href="https://mgwfalconengineering@gmail.com" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Messenger">
+                <MdEmail className="size-5" />
               </a>
               <a href="https://t.me/ATDA2026" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="WhatsApp">
-                <Send className="size-5" />
+                <FaTelegram className="size-5" />
               </a>
             </div>
             <p className="mt-5 text-xs text-[#64748b]">© 2026 Selam Learner's. All rights reserved.</p>

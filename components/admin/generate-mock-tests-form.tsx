@@ -21,8 +21,8 @@ export function GenerateMockTestsForm() {
           <div>
             <h2 className="text-lg font-extrabold text-[#142238]">Generate Mock Test from Questionnaires</h2>
             <p className="mt-1 text-sm text-[#607477]">
-              Extract questions from all imported study questionnaires and create one 100-question mock test
-              with a 30-minute time limit.
+              Extract questions from all imported study questionnaires and create one 50-question mock test
+              with a 50-minute time limit.
             </p>
           </div>
         </div>
@@ -35,7 +35,7 @@ export function GenerateMockTestsForm() {
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#d79a0b] px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           <RefreshCw className="size-4" />
-          {generating ? 'Generating…' : 'Generate Mock Test (100 questions)'}
+          {generating ? 'Generating…' : 'Generate Mock Test (50 questions)'}
         </button>
         {generateState.status === 'success' && (
           <p className="flex items-start gap-2 rounded-lg p-3 text-sm font-semibold bg-[#e6f5f3] text-[#06625e]">

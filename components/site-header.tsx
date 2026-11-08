@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import {
-  BarChart3,
   House,
   LogOut,
   Menu,
@@ -31,7 +30,7 @@ export function SiteHeader() {
     <>
       <header className={`sticky top-0 z-20 border-b backdrop-blur ${isDashboard ? 'border-[#b9d8d3] bg-[#e7f6f2]/95' : 'border-[#dce6e4] bg-[#f8faf8]/95'}`}>
         <div className="mx-auto flex max-w-[1280px] items-center justify-between px-5 py-3 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5 text-left">
+          <Link href="/" className="flex items-center gap-2.5 text-left shrink-0">
             <div className="grid size-10 place-items-center ">
               <Image src="/selamlogo1.png"   alt="Selam Menged Logo" width={64} height={64}/>
             </div>
@@ -41,45 +40,50 @@ export function SiteHeader() {
             </div>
           </Link>
 
-          {/* Desktop navigation */}
-          <nav className="hidden items-center gap-2 md:flex">
-            <Link href="/" className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold ${isHome ? 'bg-[#007b78] text-white shadow-sm' : 'border border-[#bfcecb] bg-white text-[#314957]'}`}>
-              <House className="size-4" />
-              Selam Learner's
+          {/* Desktop navigation - centered */}
+          <nav className="hidden md:flex flex-1 justify-center items-center gap-6">
+            <Link href="/" className={`text-sm font-semibold transition ${isHome ? 'text-[#007b78]' : 'text-[#314957] hover:text-[#087f78]'}`}>
+              Home
             </Link>
-            <Link href="/dashboard" className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold ${isDashboard ? 'bg-[#007b78] text-white shadow-sm' : 'border border-[#bfcecb] bg-white text-[#314957]'}`}>
-              <BarChart3 className="size-4" />
-              Dashboard
+            <Link href="/about" className="text-sm font-semibold transition text-[#314957] hover:text-[#087f78]">
+              About us
             </Link>
-            <Link href="/pricing" className="rounded-lg border border-[#bfcecb] bg-white px-4 py-2.5 text-sm">
+            <Link href="/dashboard" className={`text-sm font-semibold transition ${isDashboard ? 'text-[#007b78]' : 'text-[#314957] hover:text-[#087f78]'}`}>
+              Course &amp; module
+            </Link>
+            <Link href="/pricing" className="text-sm font-semibold transition text-[#314957] hover:text-[#087f78]">
               Pricing
             </Link>
+            <Link href="/contact" className="text-sm font-semibold transition text-[#314957] hover:text-[#087f78]">
+              Contact
+            </Link>
+          </nav>
+
+          <div className="hidden md:flex items-center gap-4 shrink-0">
             {user ? (
               <>
-                {user.role === 'admin' && (
-                  <Link href="/admin/users" className="rounded-lg border border-[#bfcecb] bg-white px-4 py-2.5 text-sm font-bold">
-                    Admin
-                  </Link>
-                )}
-                {user.role !== 'admin' && user.paymentStatus !== 'approved' && (
-                  <Link
-                    href={user.paymentStatus === 'pending' ? '/payment/pending' : '/payment'}
-                    className="rounded-lg border border-[#bfcecb] bg-white px-4 py-2.5 text-sm font-bold text-[#087f78]"
-                  >
-                    {user.paymentStatus === 'pending' ? 'Payment pending' : 'Payment'}
-                  </Link>
-                )}
-                <button onClick={handleLogout} className="flex items-center gap-2 rounded-lg border border-[#bfcecb] bg-white px-4 py-2.5 text-sm text-red-600">
-                  <LogOut className="size-4" />
+                <Link
+                  href={user.role === 'admin' ? '/admin/users' : '/dashboard'}
+                  className="rounded-lg bg-[#007b78] px-4 py-2 text-sm font-semibold text-white hover:bg-[#066a64] transition-colors"
+                >
+                  {user.role === 'admin' ? 'Admin' : 'Dashboard'}
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-lg border border-[#bfcecb] px-4 py-2 text-sm font-bold text-[#007b78] hover:bg-[#effafa] transition-colors"
+                >
                   Logout
                 </button>
               </>
             ) : (
-              <Link href="/login" className="rounded-lg border border-[#007b78] bg-white px-4 py-2.5 text-sm font-bold text-[#007b78]">
-                Login
-              </Link>
+              <>
+                <Link href="/login" className="text-sm font-semibold text-[#087f78] hover:text-[#007b78]">Login</Link>
+                <Link href="/signup" className="rounded-lg bg-[#007b78] px-4 py-2 text-sm font-semibold text-white hover:bg-[#066a64] transition-colors">
+                  Register
+                </Link>
+              </>
             )}
-          </nav>
+          </div>
 
           {/* Mobile hamburger button */}
           <button
@@ -113,65 +117,74 @@ export function SiteHeader() {
           <Link
             href="/"
             onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${isHome ? 'bg-[#007b78] text-white shadow-sm' : 'text-[#314957] hover:bg-[#effafa] hover:text-[#087f78]'}`}
+            className={`block text-sm font-semibold transition ${isHome ? 'text-[#007b78]' : 'text-[#314957] hover:text-[#087f78]'}`}
           >
-            <House className="size-4" />
-            <span>DrivoPrep Learners</span>
+            Home
+          </Link>
+          <Link
+            href="/about"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-semibold transition text-[#314957] hover:text-[#087f78]"
+          >
+            About us
           </Link>
           <Link
             href="/dashboard"
             onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${isDashboard ? 'bg-[#007b78] text-white shadow-sm' : 'text-[#314957] hover:bg-[#effafa] hover:text-[#087f78]'}`}
+            className={`block text-sm font-semibold transition ${isDashboard ? 'text-[#007b78]' : 'text-[#314957] hover:text-[#087f78]'}`}
           >
-            <BarChart3 className="size-4" />
-            <span>Dashboard</span>
+            Course &amp; module
           </Link>
           <Link
             href="/pricing"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm transition hover:bg-[#effafa] hover:text-[#087f78]"
+            className="block text-sm font-semibold transition text-[#314957] hover:text-[#087f78]"
           >
-            <span>Pricing</span>
+            Pricing
+          </Link>
+          <Link
+            href="/contact"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-semibold transition text-[#314957] hover:text-[#087f78]"
+          >
+            Contact
           </Link>
           {user ? (
             <>
-              {user.role === 'admin' && (
-                <Link
-                  href="/admin/users"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-bold transition hover:bg-[#effafa] hover:text-[#087f78]"
-                >
-                  <span>Admin</span>
-                </Link>
-              )}
-              {user.role !== 'admin' && user.paymentStatus !== 'approved' && (
-                <Link
-                  href={user.paymentStatus === 'pending' ? '/payment/pending' : '/payment'}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-bold text-[#087f78] hover:bg-[#effafa]"
-                >
-                  <span>{user.paymentStatus === 'pending' ? 'Payment pending' : 'Payment'}</span>
-                </Link>
-              )}
+              <Link
+                href={user.role === 'admin' ? '/admin/users' : '/dashboard'}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block rounded-lg bg-[#007b78] px-4 py-2 text-sm font-semibold text-white hover:bg-[#066a64] transition-colors mb-3"
+              >
+                {user.role === 'admin' ? 'Admin' : 'Dashboard'}
+              </Link>
               <button
                 onClick={() => {
                   setMobileMenuOpen(false)
                   handleLogout()
                 }}
-                className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-600 hover:bg-[#fdeeee]"
+                className="block rounded-lg border border-[#bfcecb] px-4 py-2 text-sm font-bold text-[#007b78] hover:bg-[#effafa] transition-colors mb-3"
               >
-                <LogOut className="size-4" />
-                <span>Logout</span>
+                Logout
               </button>
             </>
           ) : (
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-bold text-[#007b78] hover:bg-[#effafa]"
-            >
-              <span>Login</span>
-            </Link>
+            <>
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-sm font-semibold text-[#087f78] hover:text-[#007b78] mb-2"
+              >
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block rounded-lg bg-[#007b78] px-4 py-2 text-sm font-semibold text-white hover:bg-[#066a64] transition-colors"
+              >
+                Register
+              </Link>
+            </>
           )}
         </nav>
 

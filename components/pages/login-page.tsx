@@ -82,7 +82,7 @@ export function LoginPage({ callbackUrl }: { callbackUrl: string }) {
           </p>
           <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-[#718181]">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#168f82]" />
-            Study, Practice, Mock Tests and Quick Quizzes unlock after your manual payment is verified by an administrator.
+            Study and Full Mock Tests unlock after your manual payment is verified by an administrator.
           </p>
         </div>
       </section>

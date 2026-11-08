@@ -770,22 +770,22 @@ export async function generateMockTestFromQuestionnaires(): Promise<{
     }
   }
 
-  const TOTAL_NEEDED = 100
+  const TOTAL_NEEDED = 50
   if (allQuestions.length < TOTAL_NEEDED) {
     throw new Error(
       `Not enough questions to generate a mock test. Need ${TOTAL_NEEDED}, found ${allQuestions.length}. Import more questions via Excel first.`
     )
   }
 
-  // Take exactly 100 questions, distributed round-robin across categories so each
+  // Take exactly 50 questions, distributed round-robin across categories so each
   // category is represented proportionally. Order is deterministic (no shuffle).
   const selected = allQuestions.slice(0, TOTAL_NEEDED)
 
   const id = await addMockTest({
     title: 'Mock Test',
-    description: '100 questions drawn from study questionnaires across all categories. 30-minute time limit. Unanswered questions count as incorrect.',
+    description: '50 questions drawn from study questionnaires across all categories. 50-minute time limit. Unanswered questions count as incorrect.',
     fileName: 'mock-test-generated',
-    timeLimitMin: 30,
+    timeLimitMin: 50,
     passMark: 75,
     questions: selected.map((q, idx) => ({
       position: idx + 1,

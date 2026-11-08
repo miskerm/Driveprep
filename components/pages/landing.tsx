@@ -3,39 +3,63 @@
 import Link from 'next/link'
 import { BookOpen, CircleHelp, Pencil, ShieldCheck, Trophy } from 'lucide-react'
 
-const dashboardImage = '/dashboard_image.png'
-
 export function Landing() {
 
   return (
     <>
-      <section id="home" className="mx-auto grid max-w-[1280px] items-center gap-12 px-5 pb-14 pt-16 lg:grid-cols-[.8fr_1.2fr] lg:px-10 lg:pb-20 lg:pt-20">
-        <div>
-          <h1 className="max-w-[520px] text-6xl font-extrabold leading-[.98] tracking-[-.045em] sm:text-7xl">
-            Get ready<br />for your<br />learner&apos;s<br />test
-          </h1>
-          <p className="mt-6 max-w-[500px] text-lg leading-8 text-[#203c58]">
-            A Drivers Licence study app with practice-style questions, clear explanations, and a full mock test simulation.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/dashboard" className="rounded-lg bg-[#ff9318] px-4 py-3 font-semibold text-white">
-              Open Dashboard
-            </Link>
-            <Link href="/quizzes" className="rounded-lg border border-[#007b78] bg-white px-4 py-3 font-semibold text-[#007b78]">
-              Start Quick Quiz
-            </Link>
-          </div>
-          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-[#314957]">
-            <span>♧ Practice on your schedule</span>
-            <span>◉ Learner-safe practice content</span>
-            <span>♧ Full Access upgrade</span>
-          </div>
-        </div>
-        <Link href="/dashboard" className="rounded-xl border border-[#d5e0de] bg-white p-2 text-left shadow-[0_24px_60px_rgba(20,55,60,.08)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={dashboardImage} alt="DrivoPrep learner dashboard preview; tap to open dashboard" className="w-full rounded-lg" />
-        </Link>
-      </section>
+      <section
+    id="home"
+    className="relative flex items-center mx-auto max-w-[1280px] overflow-hidden px-6 py-14 lg:min-h-[680px] lg:px-16 lg:py-16"
+    style={{
+      backgroundImage: `url('/bknd_image.png')`,
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundSize: 'cover',
+    }}
+  >
+    {/* Left content */}
+    <div className="relative z-10">
+    
+  
+    {/* Heading */}
+    <h1 className="max-w-[650px] text-5xl font-extrabold leading-[1.02] tracking-[-0.055em] text-white sm:text-6xl lg:text-[76px]">
+     
+      <span className="text-[#fff]">
+        Learn the rules
+      </span>
+      <br />
+      Own the road
+    </h1>
+
+    {/* Description */}
+    <p className="mt-7 max-w-[510px] text-base leading-7 text-[#cbd5d1] sm:text-lg">
+      Prepare your driving theory exam with clear lessons, interactive practice questions and realistic mock tests - built to help Ethiopian learners drive with knowledge and confidence.
+    </p>
+
+    {/* Buttons */}
+    <div className="mt-8 flex flex-wrap gap-4">
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-3 rounded-full bg-[#087f78] px-8 py-4 font-semibold text-white transition-all hover:bg-[#066a64] hover:shadow-lg"
+      >
+        Start Studying
+        <span>→</span>
+      </Link>
+
+      <Link
+        href="/quizzes"
+        className="inline-flex items-center gap-3 rounded-full border border-[#cbd5d1] px-8 py-4 font-semibold text-[#e2e8f0] transition-all hover:bg-[#1e3e3c]"
+      >
+        Take a Practice Test
+        <span>▶</span>
+      </Link>
+    </div>
+
+    {/* Features */}
+    
+   
+  </div>
+</section>
       <section className="mx-auto grid max-w-[1280px] grid-cols-2 border-y border-[#d3e1df] bg-[#effafa] text-center md:grid-cols-5">
         <div className="border-r border-[#d3e1df] px-4 py-9">
           <CircleHelp className="mx-auto text-[#168f82]" />

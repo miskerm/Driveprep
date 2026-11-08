@@ -186,18 +186,18 @@ export async function generateMockTestAction(
     if (result.skipped) {
       return {
         status: 'success',
-        message: `Mock test already exists: “${result.test?.title}”. It has ${result.test?.questionCount} questions with a 30-minute time limit.`,
+        message: `Mock test already exists: “${result.test?.title}”. It has ${result.test?.questionCount} questions with a 50-minute time limit.`,
       }
     }
     return {
       status: 'success',
-      message: `Generated “${result.test?.title}” with ${result.test?.questionCount} questions and a 30-minute time limit.`,
+      message: `Generated “${result.test?.title}” with ${result.test?.questionCount} questions and a 50-minute time limit.`,
     }
   } catch (error) {
     console.error('Failed to generate mock test:', error)
     return {
       status: 'error',
-      message: error instanceof Error ? error.message : 'Failed to generate mock test. Make sure you have at least 100 questions imported via Excel across your categories.',
+      message: error instanceof Error ? error.message : 'Failed to generate mock test. Make sure you have at least 50 questions imported via Excel across your categories.',
     }
   }
 }
