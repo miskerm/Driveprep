@@ -45,3 +45,18 @@ export type CategoryExcelSaveState = {
   status: 'idle' | 'success' | 'error'
   message: string
 }
+
+export type PracticeExcelImportState = {
+  status: 'idle' | 'success' | 'error'
+  message: string
+  questions: ParsedMockQuestion[]
+  warnings: string[]
+  suggestedTitle: string
+  fileName: string
+  topicId: string
+}
+
+export type PracticeExcelSaveState = {
+  status: 'idle' | 'success' | 'error'
+  message: string
+}

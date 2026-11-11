@@ -412,6 +412,34 @@ const migrations: Migration[] = [
     },
   },
   {
+    version: 12,
+    name: 'ensure-practice-tables',
+    up: async () => {
+      await db().execute(`CREATE TABLE IF NOT EXISTS practice_topics (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`)
+      await db().execute(
+        'CREATE INDEX IF NOT EXISTS practice_topics_title_idx ON practice_topics (title)',
+      )
+      await db().execute(`CREATE TABLE IF NOT EXISTS practice_questions (
+        id TEXT PRIMARY KEY,
+        topic_id TEXT NOT NULL,
+        question TEXT NOT NULL,
+        options_json TEXT NOT NULL,
+        correct_answer TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+      )`)
+      await db().execute(
+        'CREATE INDEX IF NOT EXISTS practice_questions_topic_idx ON practice_questions (topic_id)',
+      )
+    },
+  },
+  {
     version: 9,
     name: 'ensure-learner-device-unique',
     up: async () => {

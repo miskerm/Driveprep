@@ -723,6 +723,189 @@ export async function addStudyQuestionnaireWithQuestions(input: {
   await db().batch(statements, 'write')
 }
 
+export async function getPracticeTopics(): Promise<PracticeTopic[]> {
+  try {
+    return await withRetry(async () => {
+      await ensurePracticeTables()
+      const result = await db().execute(
+        'SELECT id, title, description, created_at, updated_at FROM practice_topics ORDER BY created_at ASC',
+      )
+      const topics: PracticeTopic[] = []
+      for (const row of result.rows) {
+        const id = String(row.id ?? '')
+        const questionsResult = await db().execute({
+          sql: 'SELECT id, topic_id, question, options_json, correct_answer, position, created_at FROM practice_questions WHERE topic_id = ? ORDER BY position ASC, created_at ASC',
+          args: [id],
+        })
+        topics.push({
+          id,
+          title: String(row.title ?? ''),
+          description: row.description === null || row.description === undefined ? null : String(row.description),
+          questions: questionsResult.rows.map((qrow) => ({
+            id: String(qrow.id ?? ''),
+            topicId: String(qrow.topic_id ?? ''),
+            question: String(qrow.question ?? ''),
+            options: (() => {
+              try {
+                return JSON.parse(String(qrow.options_json ?? '[]')) as string[]
+              } catch {
+                return []
+              }
+            })(),
+            correctAnswer: String(qrow.correct_answer ?? ''),
+            position: toNumber(qrow.position),
+            createdAt: String(qrow.created_at ?? ''),
+          })),
+          createdAt: String(row.created_at ?? ''),
+          updatedAt: String(row.updated_at ?? ''),
+        })
+      }
+      return topics
+    })
+  } catch (error) {
+    console.error('Could not load practice topics:', error)
+    return []
+  }
+}
+
+export async function getPracticeTopic(topicId: string): Promise<{ topic: PracticeTopic | null; questions: PracticeQuestion[] } | null> {
+  try {
+    return await withRetry(async () => {
+      await ensurePracticeTables()
+      const result = await db().execute({
+        sql: 'SELECT id, title, description, created_at, updated_at FROM practice_topics WHERE id = ?',
+        args: [topicId],
+      })
+      const row = result.rows[0]
+      if (!row) return null
+      const questionsResult = await db().execute({
+        sql: 'SELECT id, topic_id, question, options_json, correct_answer, position, created_at FROM practice_questions WHERE topic_id = ? ORDER BY position ASC, created_at ASC',
+        args: [topicId],
+      })
+      return {
+        topic: {
+          id: String(row.id ?? ''),
+          title: String(row.title ?? ''),
+          description: row.description === null || row.description === undefined ? null : String(row.description),
+          questions: questionsResult.rows.map((qrow) => ({
+            id: String(qrow.id ?? ''),
+            topicId: String(qrow.topic_id ?? ''),
+            question: String(qrow.question ?? ''),
+            options: (() => {
+              try {
+                return JSON.parse(String(qrow.options_json ?? '[]')) as string[]
+              } catch {
+                return []
+              }
+            })(),
+            correctAnswer: String(qrow.correct_answer ?? ''),
+            position: toNumber(qrow.position),
+            createdAt: String(qrow.created_at ?? ''),
+          })),
+          createdAt: String(row.created_at ?? ''),
+          updatedAt: String(row.updated_at ?? ''),
+        },
+        questions: questionsResult.rows.map((qrow) => ({
+          id: String(qrow.id ?? ''),
+          topicId: String(qrow.topic_id ?? ''),
+          question: String(qrow.question ?? ''),
+          options: (() => {
+            try {
+              return JSON.parse(String(qrow.options_json ?? '[]')) as string[]
+            } catch {
+              return []
+            }
+          })(),
+          correctAnswer: String(qrow.correct_answer ?? ''),
+          position: toNumber(qrow.position),
+          createdAt: String(qrow.created_at ?? ''),
+        })),
+      }
+    })
+  } catch (error) {
+    console.error(`Could not load practice topic ${topicId}:`, error)
+    return null
+  }
+}
+
+export async function addPracticeTopic(input: {
+  id: string
+  title: string
+  description?: string | null
+}) {
+  await ensurePracticeTables()
+  const now = new Date().toISOString()
+  await db().execute({
+    sql: 'INSERT INTO practice_topics (id, title, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    args: [input.id, input.title, input.description ?? null, now, now],
+  })
+}
+
+export async function addPracticeQuestions(input: {
+  topicId: string
+  questions: Array<{ question: string; options: string[]; correctAnswer: string }>
+}) {
+  await ensurePracticeTables()
+  const now = new Date().toISOString()
+  const existing = await db().execute({
+    sql: 'SELECT COALESCE(MAX(position), 0) AS max_pos FROM practice_questions WHERE topic_id = ?',
+    args: [input.topicId],
+  })
+  let position = toNumber(existing.rows[0].max_pos)
+  const statements: Array<{ sql: string; args: (string | number | null)[] }> = []
+  for (const q of input.questions) {
+    position++
+    const qid = `pq-${crypto.randomUUID().slice(0, 8)}`
+    statements.push({
+      sql: 'INSERT INTO practice_questions (id, topic_id, question, options_json, correct_answer, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      args: [qid, input.topicId, q.question, JSON.stringify(q.options), q.correctAnswer, position, now],
+    })
+  }
+  await db().batch(statements, 'write')
+}
+
+export async function deletePracticeTopic(topicId: string) {
+  await withRetry(async () => {
+    await ensurePracticeTables()
+    await db().batch(
+      [
+        { sql: 'DELETE FROM practice_questions WHERE topic_id = ?', args: [topicId] },
+        { sql: 'DELETE FROM practice_topics WHERE id = ?', args: [topicId] },
+      ],
+      'write',
+    )
+  })
+}
+
+let practiceTablesReady = false
+
+async function ensurePracticeTables() {
+  if (practiceTablesReady) return
+  await db().execute(`CREATE TABLE IF NOT EXISTS practice_topics (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`)
+  await db().execute(
+    'CREATE INDEX IF NOT EXISTS practice_topics_title_idx ON practice_topics (title)',
+  )
+  await db().execute(`CREATE TABLE IF NOT EXISTS practice_questions (
+    id TEXT PRIMARY KEY,
+    topic_id TEXT NOT NULL,
+    question TEXT NOT NULL,
+    options_json TEXT NOT NULL,
+    correct_answer TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  )`)
+  await db().execute(
+    'CREATE INDEX IF NOT EXISTS practice_questions_topic_idx ON practice_questions (topic_id)',
+  )
+  practiceTablesReady = true
+}
+
 export async function generateMockTestFromQuestionnaires(): Promise<{
   created: boolean
   test: { id: string; title: string; questionCount: number } | null

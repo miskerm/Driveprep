@@ -81,3 +81,27 @@ export type QuestionFormState = {
   status: 'idle' | 'success' | 'error'
   message: string
 }
+
+export type PracticeTopic = {
+  id: string
+  title: string
+  description: string | null
+  questions: PracticeQuestion[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type PracticeQuestion = {
+  id: string
+  topicId: string
+  question: string
+  options: string[]
+  correctAnswer: string
+  position: number
+  createdAt: string
+}
+
+export type PracticeFormState = {
+  status: 'idle' | 'success' | 'error'
+  message: string
+}
