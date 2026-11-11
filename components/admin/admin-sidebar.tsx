@@ -40,7 +40,7 @@ export function AdminSidebar() {
             <ShieldCheck className="size-6" />
           </span>
           <span>
-            <span className="block text-base font-extrabold text-[#142238]">DrivoPrep</span>
+            <span className="block text-base font-extrabold text-[#142238]">Selam Learner's</span>
             <span className="block text-xs font-bold uppercase tracking-widest text-[#168f82]">Admin panel</span>
           </span>
         </Link>
@@ -121,7 +121,7 @@ export function AdminSidebar() {
               <ShieldCheck className="size-6" />
             </span>
             <span>
-              <span className="block text-base font-extrabold text-[#142238]">DrivoPrep</span>
+              <span className="block text-base font-extrabold text-[#142238]">Selam Learner's</span>
               <span className="block text-xs font-bold uppercase tracking-widest text-[#168f82]">Admin panel</span>
             </span>
           </Link>

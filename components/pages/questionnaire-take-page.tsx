@@ -346,43 +346,31 @@ export function QuestionnaireTakePage({ questionnaireId }: { questionnaireId: st
 
               {/* Question-by-question summary */}
               <div className="mt-8 space-y-3">
-                <h3 className="text-sm font-extrabold text-[#142238] uppercase tracking-wider">
+                <h3 className="text-sm font-extrabold text-[#991b1b] uppercase tracking-wider">
                   Review your answers
                 </h3>
                 <div className="space-y-3">
                   {questions.map((q) => {
                     const correctLetter = getCorrectLetter(q)
-                    const userAnswer = answers[q.id]
-                    const isCorrect = userAnswer === correctLetter
                     const correctOptionIndex = correctLetter ? correctLetter.charCodeAt(0) - 65 : -1
                     return (
-                      <div
-                        key={q.id}
-                        className={`rounded-lg border p-4 ${isCorrect ? 'border-[#10b981] bg-[#dcfce7]/30' : 'border-[#ef4444] bg-[#fee2e2]/30'}`}
-                      >
+                      <div key={q.id} className="rounded-lg border border-[#ef4444] bg-[#fee2e2]/20 p-4">
                         <div className="flex items-start gap-2 mb-2">
-                          <span
-                            className={`font-bold text-xs ${isCorrect ? 'text-[#166534]' : 'text-[#991b1b]'}`}
-                          >{isCorrect ? '✓' : '✗'}</span
-                          >
-                          <p className="text-sm font-semibold text-[#142238]">{q.question}</p>
+                          <p className="text-sm font-semibold text-[#991b1b]">{q.question}</p>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
-                          <span className={`font-bold ${isCorrect ? 'text-[#166534]' : 'text-[#991b1b]'}`}>
-                            {isCorrect ? 'Correct' : 'Incorrect'}
-                          </span>
                           <span className="text-[#6b7280] ml-2">Correct answer:</span>
-                          <span className="text-[#166534] ml-1">
+                          <span className="text-[#991b1b] font-bold ml-1">
                             {`${correctLetter}. ${q.options[correctOptionIndex]}`}
                           </span>
                         </div>
                         {q.explanation && q.explanation.trim() !== '' && (
-                          <div className="mt-3 rounded-lg border border-[#e3e8e6] bg-[#f8fafc] p-3">
+                          <div className="mt-3 rounded-lg border border-[#ef4444]/30 bg-[#fee2e2]/20 p-3">
                             <div className="flex items-start gap-2 mb-1">
-                              <AlertTriangle className="size-4 text-[#087f78] shrink-0" />
-                              <h4 className="font-bold text-xs text-[#142238]">Explanation</h4>
+                              <AlertTriangle className="size-4 text-[#991b1b] shrink-0" />
+                              <h4 className="font-bold text-xs text-[#991b1b]">Explanation</h4>
                             </div>
-                            <p className="text-xs text-[#3d5153] leading-5">{q.explanation}</p>
+                            <p className="text-xs text-[#991b1b] leading-5">{q.explanation}</p>
                           </div>
                         )}
                       </div>
