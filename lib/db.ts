@@ -1346,11 +1346,20 @@ export async function getMockTestQuestions(mockTestId: string): Promise<ParsedMo
   try {
     return await withRetry(async () => {
       await ensureMockTables()
-      const result = await db().execute({
-        sql: 'SELECT position, question, options_json, correct_answer, explanation, created_at FROM mock_questions WHERE mock_test_id = ? ORDER BY position ASC',
+      await ensureStudyQuestionnairesTable()
+      // Get the mock test to know question count
+      const testResult = await db().execute({
+        sql: 'SELECT id, question_count FROM mock_tests WHERE id = ?',
         args: [mockTestId],
       })
-      return result.rows.map((row) => {
+      const testRow = testResult.rows[0]
+      const questionCount = testRow ? toNumber(testRow.question_count) : 50
+      // Select random questions from the questionnaire pool each time with extra randomness
+      const result = await db().execute({
+        sql: 'SELECT id, question, options_json, correct_answer, explanation, created_at FROM study_questionnaire_questions ORDER BY RANDOM() * RANDOM() LIMIT ?',
+        args: [questionCount],
+      })
+      return result.rows.map((row, index) => {
         let options: string[] = []
         try {
           const parsed = JSON.parse(String(row.options_json ?? '[]')) as unknown
@@ -1358,8 +1367,10 @@ export async function getMockTestQuestions(mockTestId: string): Promise<ParsedMo
         } catch {
           options = []
         }
+        // Shuffle options order for extra variety
+        options.sort(() => Math.random() - 0.5)
         return {
-          position: toNumber(row.position),
+          position: index + 1,
           question: String(row.question ?? ''),
           options,
           correct: String(row.correct_answer ?? ''),

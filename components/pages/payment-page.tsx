@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, BadgeCheck, Banknote, Clock3, CreditCard, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, Banknote, CreditCard } from 'lucide-react'
 import type { PaymentConfig } from '@/lib/payment-config'
 
 export type PaymentPageUser = {
@@ -37,21 +37,23 @@ export function PaymentInstructions({
             Back to dashboard
           </Link>
           <span className="hidden items-center gap-2 text-sm font-bold text-[#607477] sm:flex">
-            <ShieldCheck className="size-5 text-[#168f82]" />
+            <BadgeCheck className="size-5 text-[#168f82]" />
             Secure manual verification
           </span>
         </div>
       </div>
 
       <div className="mx-auto max-w-[1100px] px-5 py-10 lg:py-14">
-        <div className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
+        <div className="grid gap-6 lg:grid-cols-[1fr]">
+          {/* Payment details card */}
           <section className="rounded-2xl border border-[#d8e2e0] bg-white p-6 shadow-sm sm:p-8">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#168f82]">Premium access</p>
-            <h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">Complete your payment</h1>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-[#607477]">
-              Pay the amount below using your banking app, then upload a screenshot of the receipt. Your premium
-              access is activated after an administrator verifies the payment.
-            </p>
+            <div className="flex items-start gap-2 mb-5">
+              <Banknote className="size-5 text-[#087f78]" />
+              <div>
+                <h1 className="text-3xl font-extrabold sm:text-4xl">Complete your payment</h1>
+                <p className="text-sm text-[#607477]">Pay the amount below, then upload a screenshot for verification.</p>
+              </div>
+            </div>
 
             {rejectedReason && (
               <div role="alert" className="mt-5 rounded-xl border border-[#f0c9c9] bg-[#fdf1f1] p-4 text-sm text-[#a33b3b]">
@@ -111,46 +113,6 @@ export function PaymentInstructions({
               I Have Paid — Upload Screenshot
             </Link>
           </section>
-
-          <aside className="space-y-5">
-            <section className="rounded-2xl border border-[#d8e2e0] bg-white p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-lg font-extrabold">
-                <Clock3 className="size-5 text-[#168f82]" />
-                What happens next
-              </h2>
-              <ol className="mt-4 space-y-4 text-sm leading-6 text-[#3d5153]">
-                <li className="flex gap-3">
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#e6f5f3] text-xs font-extrabold text-[#087f78]">1</span>
-                  Pay the exact amount to the bank or Telebirr account shown.
-                </li>
-                <li className="flex gap-3">
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#e6f5f3] text-xs font-extrabold text-[#087f78]">2</span>
-                  Upload a clear screenshot of the payment confirmation.
-                </li>
-                <li className="flex gap-3">
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#e6f5f3] text-xs font-extrabold text-[#087f78]">3</span>
-                  An administrator verifies the screenshot. Until then your payment status stays pending.
-                </li>
-                <li className="flex gap-3">
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#e6f5f3] text-xs font-extrabold text-[#087f78]">4</span>
-                  Once approved, Study and Full Mock Tests unlock automatically.
-                </li>
-              </ol>
-            </section>
-
-            <section className="rounded-2xl border border-[#d8e2e0] bg-white p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-lg font-extrabold">
-                <BadgeCheck className="size-5 text-[#168f82]" />
-                Signed in as
-              </h2>
-              <p className="mt-3 text-base font-extrabold">{user.name}</p>
-              <p className="mt-1 break-words text-sm font-semibold text-[#607477]">{identifier}</p>
-              <p className="mt-4 text-xs leading-5 text-[#718181]">
-                Premium access is personal to this account. Sharing an account or using more than one device may
-                restrict access.
-              </p>
-            </section>
-          </aside>
         </div>
       </div>
     </main>

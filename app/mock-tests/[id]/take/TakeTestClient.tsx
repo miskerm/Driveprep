@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, Clock2, RefreshCw, ShieldCheck, XCircle, CheckCircle2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, ArrowRight, AlertTriangle, Clock2, RefreshCw, ShieldCheck, XCircle, CheckCircle2 } from 'lucide-react'
 import type { ParsedMockQuestion } from '@/lib/mock-types'
 
 function formatTime(seconds: number) {
@@ -34,6 +35,7 @@ export default function TakeTestClient({
   const [currentQuestion, setCurrentQuestion] = useState(1)
   const [submitted, setSubmitted] = useState(false)
   const [showResults, setShowResults] = useState(false)
+  const router = useRouter()
 
   const total = questions.length
 
@@ -109,20 +111,7 @@ export default function TakeTestClient({
   }
 
   const handleRetake = () => {
-    setAnswers({})
-    setCurrentQuestion(1)
-    setTimeLeft((test.timeLimitMin ?? 60) * 60)
-    setSubmitted(false)
-    setShowResults(false)
-    timerRef.current = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          setSubmitted(true)
-          return 0
-        }
-        return t - 1
-      })
-    }, 1000)
+    window.location.href = `/mock-tests/${test.id}/take`
   }
 
   if (showResults) {
@@ -202,11 +191,11 @@ export default function TakeTestClient({
                 </div>
                 <div className="divide-y divide-[#dfe7e6]">
                   {results.map((r) => (
-                    <div key={r.position} className="px-6 py-4">
+                    <div key={r.position} className={`rounded-lg border p-4 ${r.isCorrect ? 'border-[#10b981] bg-[#dcfce7]/20' : 'border-[#ef4444] bg-[#fee2e2]/20'}`}>
                       <div className="flex items-start gap-3">
                         <span
                           className={`grid size-7 shrink-0 place-items-center rounded-full font-bold text-xs ${
-                            r.isCorrect ? 'bg-[#e6f5f3] text-[#23a36c]' : 'bg-[#fdeeee] text-[#c24834]'
+                            r.isCorrect ? 'bg-[#e6f5f3] text-[#06625e]' : 'bg-[#fdeeee] text-[#c24834]'
                           }`}
                         >
                           {r.isCorrect ? <CheckCircle2 className="size-3" /> : <XCircle className="size-3" />}
@@ -216,15 +205,19 @@ export default function TakeTestClient({
                             Q{r.position}. {r.question}
                           </p>
                           <p className="mt-1 text-xs text-[#607477]">
-                            <span className={`font-bold ${r.isCorrect ? 'text-[#23a36c]' : 'text-[#c24834]'}`}>
-                              {r.isCorrect ? 'Correct' : 'Incorrect'}
+                            <span className="text-[#6b7280] ml-2">Correct answer:</span>
+                            <span className="text-[#06625e] font-bold ml-1">
+                              {r.correct}
                             </span>
-                            <span className="ml-2 text-xs text-[#168f82]">Correct answer: {r.correct}</span>
                           </p>
                           {r.explanation && (
-                            <p className="mt-1 text-xs text-[#3d5153] bg-[#fbfdfc] rounded p-2">
-                              Explanation: {r.explanation}
-                            </p>
+                            <div className="mt-3 rounded-lg border border-[#ef4444]/30 bg-[#dcfce7]/20 p-3">
+                              <div className="flex items-start gap-2 mb-1">
+                                <AlertTriangle className="size-4 text-[#06625e] shrink-0" />
+                                <h4 className="font-bold text-xs text-[#06625e]">Explanation</h4>
+                              </div>
+                              <p className="text-xs text-[#06625e] leading-5">{r.explanation}</p>
+                            </div>
                           )}
                         </div>
                       </div>
