@@ -969,7 +969,7 @@ export async function generateMockTestFromQuestionnaires(): Promise<{
     description: '50 questions drawn from study questionnaires across all categories. 50-minute time limit. Unanswered questions count as incorrect.',
     fileName: 'mock-test-generated',
     timeLimitMin: 50,
-    passMark: 75,
+    passMark: 74,
     questions: selected.map((q, idx) => ({
       position: idx + 1,
       question: q.question,

@@ -56,7 +56,7 @@ export function MockTestBuilder({ savedTests }: { savedTests: SavedMockTest[] })
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [timeLimit, setTimeLimit] = useState('60')
-  const [passMark, setPassMark] = useState('75')
+  const [passMark, setPassMark] = useState('74')
   const [notice, setNotice] = useState('')
   const importFormRef = useRef<HTMLFormElement>(null)
 

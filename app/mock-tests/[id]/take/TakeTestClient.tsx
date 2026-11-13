@@ -170,7 +170,7 @@ export default function TakeTestClient({
                       {passed ? 'You passed!' : 'You did not pass.'}
                     </h2>
                     <p className="mt-1 text-sm text-[#607477]">
-                      Score: {score} / {total} ({Math.round((score / total) * 100)}%) \u00b7
+                      Score: {score} / {total} ({Math.round((score / total) * 100)}%)
                       Pass mark: {test.passMark}%
                     </p>
                   </div>

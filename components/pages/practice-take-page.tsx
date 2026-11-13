@@ -63,7 +63,7 @@ export function PracticeTakePage({ topicId }: { topicId: string }) {
   }
 
   const total = questions.length
-  const isCorrectAnswer = q ? q.id in answers && answers[q.id] === q.correctAnswer : false
+  const isCorrectAnswer = q ? String(q.position) in answers && answers[String(q.position)] === q.correctAnswer : false
 
   const goBack = () => {
     router.push('/dashboard')

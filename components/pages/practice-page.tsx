@@ -13,10 +13,25 @@ async function fetchPracticeTopics(): Promise<PracticeTopic[]> {
 
 export function PracticePage() {
   const [topics, setTopics] = useState<PracticeTopic[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchPracticeTopics().then(setTopics)
+    fetchPracticeTopics()
+      .then(setTopics)
+      .finally(() => setLoading(false))
   }, [])
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#f6faf9] text-[#142238] flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-[#e6f5f3] border-t-[#087f78] animate-spin"></div>
+          <h2 className="mt-6 text-lg font-extrabold text-[#142238]">Loading practice questions…</h2>
+          <p className="mt-2 text-sm text-[#607477]">Please wait while we load your practice topics.</p>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-[#f6faf9] text-[#142238]">

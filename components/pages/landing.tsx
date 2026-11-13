@@ -47,7 +47,7 @@ export function Landing() {
       </Link>
 
       <Link
-        href="/quizzes"
+        href="/practice"
         className="inline-flex items-center gap-3 rounded-full border border-[#cbd5d1] px-8 py-4 font-semibold text-[#e2e8f0] transition-all hover:bg-[#1e3e3c]"
       >
         Take a Practice Test
