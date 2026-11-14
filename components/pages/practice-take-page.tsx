@@ -131,7 +131,11 @@ export function PracticeTakePage({ topicId }: { topicId: string }) {
                     onClick={() => setCurrent(q.position)}
                     className={`rounded-md border px-1 py-1 text-xs font-bold transition-colors ${
                       index === current - 1
-                        ? 'border-[#e5bc45] bg-[#fff8da]'
+                        ? isAnswered
+                          ? isCorrect
+                            ? 'border-[#10b981] bg-[#dcfce7] text-[#166534]'
+                            : 'border-[#ef4444] bg-[#fee2e2] text-[#991b1b]'
+                          : 'border-[#e5bc45] bg-[#fff8da]'
                         : isAnswered
                           ? isCorrect
                             ? 'border-[#10b981] bg-[#dcfce7] text-[#166534]'
