@@ -278,11 +278,7 @@ export default function TakeTestClient({
                     className={`rounded-md border px-1 py-1 text-xs font-bold transition ${
                       q.position === currentQuestion
                         ? 'border-[#e5bc45] bg-[#fff8da]'
-                        : answered
-                          ? isCorrect
-                            ? 'border-[#23a36c] bg-[#e6f5f3] text-[#106c69]'
-                            : 'border-[#ef6a57] bg-[#fdeeee] text-[#b33636]'
-                          : 'border-[#dbe8e6] bg-white text-[#116c69]'
+                    : 'border-[#dbe8e6] bg-white text-[#116c69]'
                     }`}
                   >
                     Q{q.position}

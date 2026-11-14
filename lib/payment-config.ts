@@ -40,6 +40,6 @@ export function getPaymentConfig(): PaymentConfig {
     telebirrAccountName,
     telebirrAccountNumber,
     referenceNote,
-    configured: amount > 0 && Boolean(bankName && accountName && accountNumber),
+    configured: amount > 0,
   }
 }
