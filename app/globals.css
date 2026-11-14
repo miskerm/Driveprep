@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+<<<<<<< HEAD
 @import '../node_modules/shadcn/dist/tailwind.css';
+=======
+@import 'shadcn/tailwind.css';
+>>>>>>> 713ebd9 (last edit)
 
 @custom-variant dark (&:is(.dark *));
 
