@@ -71,9 +71,8 @@ export default function TakeTestClient({
   }, [total])
 
   const selectAnswer = useCallback((option: string) => {
-    if (answers[currentQuestion]) return
     setAnswers((prev) => ({ ...prev, [currentQuestion]: option }))
-  }, [currentQuestion, answers])
+  }, [currentQuestion])
 
   const currentQuestionData = questions.find((q) => q.position === currentQuestion)
   const currentAnswer = answers[currentQuestion]
@@ -98,7 +97,7 @@ export default function TakeTestClient({
           checked={isSelected}
           onChange={() => selectAnswer(option)}
           className="size-5 accent-[#168f82]"
-          disabled={submitted || currentAnswer != null}
+          disabled={submitted}
         />
         <span className="font-semibold">{letter}. {option}</span>
       </label>
