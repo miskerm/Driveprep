@@ -71,8 +71,9 @@ export default function TakeTestClient({
   }, [total])
 
   const selectAnswer = useCallback((option: string) => {
+    if (answers[currentQuestion]) return
     setAnswers((prev) => ({ ...prev, [currentQuestion]: option }))
-  }, [currentQuestion])
+  }, [currentQuestion, answers])
 
   const currentQuestionData = questions.find((q) => q.position === currentQuestion)
   const currentAnswer = answers[currentQuestion]
@@ -97,7 +98,7 @@ export default function TakeTestClient({
           checked={isSelected}
           onChange={() => selectAnswer(option)}
           className="size-5 accent-[#168f82]"
-          disabled={submitted}
+          disabled={submitted || currentAnswer != null}
         />
         <span className="font-semibold">{letter}. {option}</span>
       </label>
@@ -269,7 +270,6 @@ export default function TakeTestClient({
             <div className="grid grid-cols-8 gap-2">
               {questions.map((q) => {
                 const answered = q.position in answers
-                const isCorrect = answers[q.position] === q.correct
                 return (
                   <button
                     key={q.position}
@@ -278,7 +278,9 @@ export default function TakeTestClient({
                     className={`rounded-md border px-1 py-1 text-xs font-bold transition ${
                       q.position === currentQuestion
                         ? 'border-[#e5bc45] bg-[#fff8da]'
-                    : 'border-[#dbe8e6] bg-white text-[#116c69]'
+                        : answered
+                          ? 'border-[#b45309] bg-[#eab308] text-[#78350f]'
+                          : 'border-[#dbe8e6] bg-white text-[#116c69]'
                     }`}
                   >
                     Q{q.position}
