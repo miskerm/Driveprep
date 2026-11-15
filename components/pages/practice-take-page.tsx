@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, ShieldCheck } from 'lucide-react'
-import { useProgress } from '@/components/providers'
+import { useAuth, useProgress } from '@/components/providers'
 import type { PracticeTopic, PracticeQuestion } from '@/lib/types'
 
 export function PracticeTakePage({ topicId }: { topicId: string }) {
@@ -15,7 +15,11 @@ export function PracticeTakePage({ topicId }: { topicId: string }) {
   const [sessionCorrect, setSessionCorrect] = useState(0)
   const [sessionAnswered, setSessionAnswered] = useState(0)
   const { recordAnswer, recordResult, notify } = useProgress()
+  const { user } = useAuth()
   const router = useRouter()
+
+  const isPremium = user?.plan === 'premium_1000'
+  const freeLimitReached = !isPremium && sessionAnswered >= 10
 
   const activeTopic = topics.find((t) => t.id === topicId)
   const questions = activeTopic?.questions ?? []
@@ -125,10 +129,12 @@ export function PracticeTakePage({ topicId }: { topicId: string }) {
                 const qId = String(q.position)
                 const isAnswered = qId in answers
                 const isCorrect = qId in answers && answers[qId] === q.correctAnswer
+                const isCurrent = q.position === current
                 return (
                   <button
                     key={q.id}
-                    onClick={() => setCurrent(q.position)}
+                    onClick={() => isCurrent && setCurrent(q.position)}
+                    disabled={!isCurrent}
                     className={`rounded-md border px-1 py-1 text-xs font-bold transition-colors ${
                       index === current - 1
                         ? isAnswered
@@ -189,7 +195,30 @@ export function PracticeTakePage({ topicId }: { topicId: string }) {
                 <p className="mt-2 text-base leading-relaxed text-[#142238]">The correct answer is: <strong className="text-[#06625e]">{q.correctAnswer}</strong></p>
               </div>
             )}
-            {String(q.position) in answers && current < total && <button onClick={() => { setCurrent(current + 1); setAnswers({}) }} className="mt-6 w-full rounded-lg bg-[#087f78] px-4 py-3 text-lg font-bold text-white">Next Question</button>}
+            {String(q.position) in answers && current < total && freeLimitReached ? (
+              <section className="mt-6 w-full rounded-xl border border-[#f0c9c9] bg-[#fdf1f1] p-6 text-center">
+                <p className="font-extrabold text-[#a33b3b]">Practice limit reached</p>
+                <p className="mt-2 text-sm text-[#142238]">
+                  You've answered 10 questions in this category. Unlock premium to continue with the rest.
+                </p>
+                <Link
+                  href="/payment"
+                  className="mt-4 inline-block w-full rounded-lg bg-[#087f78] px-4 py-3 text-center font-bold text-white hover:bg-[#066a64]"
+                >
+                  Unlock Premium
+                </Link>
+              </section>
+            ) : String(q.position) in answers && current < total && (
+              <button
+                onClick={() => {
+                  setCurrent(current + 1)
+                  setAnswers({})
+                }}
+                className="mt-6 w-full rounded-lg bg-[#087f78] px-4 py-3 text-lg font-bold text-white"
+              >
+                Next Question
+              </button>
+            )}
             {String(q.position) in answers && current === total && <button onClick={finishSession} className="mt-6 w-full rounded-lg bg-[#087f78] px-4 py-3 text-lg font-bold text-white">Complete &amp; Go Back</button>}
           </div>
         </div>
