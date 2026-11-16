@@ -66,7 +66,7 @@ export function PaymentInstructions({
             <div className="mt-7 rounded-xl border border-[#f2dfac] bg-[#fffaf0] p-5">
               <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-[#9a6a05]">
                 <Banknote className="size-5" />
-                Amount to pay
+                Amount to pay Annually
               </p>
               <p className="mt-2 text-4xl font-extrabold text-[#142238]">{config.amountLabel}</p>
               <p className="mt-2 text-sm font-semibold text-[#8a6410]">Pay exactly this amount for one premium account.</p>
