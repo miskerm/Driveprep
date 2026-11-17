@@ -97,3 +97,13 @@ export async function setUserAccountStatus(
 
   return { ok: true, message: status === 'terminated' ? 'Account terminated.' : 'Account activated.' }
 }
+
+export async function clearAccountEvents(): Promise<{ ok: boolean; message: string }> {
+  await ensureSchema()
+
+  await db().execute({
+    sql: 'DELETE FROM account_events',
+  })
+
+  return { ok: true, message: 'Account & payment status history cleared.' }
+}

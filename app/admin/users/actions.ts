@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/session'
 import { setPremiumRestriction } from '@/lib/db'
-import { recordAccountEvent, setUserAccountStatus } from '@/lib/account-admin'
-import { accountKey, getUserById, hasPremium } from '@/lib/users'
+import { clearAccountEvents, recordAccountEvent, setUserAccountStatus } from '@/lib/account-admin'
+import { accountKey, deleteUser, getUserById, hasPremium } from '@/lib/users'
 
 function revalidateLearnerViews() {
   revalidatePath('/admin/users')
@@ -79,4 +79,51 @@ export async function setAccountStatusAction(formData: FormData) {
   console.log(`Admin ${admin.id} updated account ${userId}: ${result.message}`)
   revalidateLearnerViews()
   redirect(status === 'terminated' ? '/admin/users?result=terminated' : '/admin/users?result=activated')
+}
+
+export async function deleteUserAction(formData: FormData) {
+  const admin = await requireAdmin()
+  const userId = Number(formData.get('userId'))
+
+  if (!Number.isInteger(userId) || userId <= 0) redirect('/admin/users?result=error')
+
+  const target = await getUserById(userId)
+  if (!target || target.role === 'admin') redirect('/admin/users?result=error')
+
+  try {
+    const result = await deleteUser(userId)
+    if (!result.ok) redirect('/admin/users?result=error')
+
+    try {
+      await recordAccountEvent({
+        userId: target.id,
+        actorId: admin.id,
+        action: 'account_deleted',
+        detail: `Account ${target.name} (user #${target.id}) deleted completely by an administrator.`,
+      })
+    } catch (error) {
+      console.error(`Could not record account deletion for user ${userId}:`, error)
+    }
+
+    revalidateLearnerViews()
+    redirect('/admin/users?result=deleted')
+  } catch (error) {
+    console.error(`Could not delete user ${userId}:`, error)
+    redirect('/admin/users?result=error')
+  }
+}
+
+export async function clearAccountHistoryAction() {
+  const admin = await requireAdmin()
+
+  try {
+    const result = await clearAccountEvents()
+    if (!result.ok) redirect('/admin/users?result=error')
+
+    revalidateLearnerViews()
+    redirect('/admin/users?result=history-cleared')
+  } catch (error) {
+    console.error('Could not clear account history:', error)
+    redirect('/admin/users?result=error')
+  }
 }

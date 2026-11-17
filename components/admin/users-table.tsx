@@ -9,16 +9,44 @@ import {
   ShieldAlert,
   ShieldCheck,
   Smartphone,
+  Trash2,
   UserCheck,
   UserX,
   Users,
 } from 'lucide-react'
 import { AccountStatusButton } from '@/components/admin/account-status-button'
 import { PremiumAccessButton } from '@/components/admin/premium-access-button'
+import { deleteUserAction } from '@/app/admin/users/actions'
 import { isAdmin, hasPremium, accountKey } from '@/lib/users-client'
 import type { AppUser } from '@/lib/users-client'
 import type { LearnerAccess } from '@/lib/access-types'
 import { DEVICE_FLAG_THRESHOLD } from '@/lib/access-types'
+
+function DeleteUserButton({ userId, name }: { userId: number; name: string }) {
+  const label = name && name !== 'Learner' ? name : `user ${userId}`
+  return (
+    <form
+      action={deleteUserAction}
+      onSubmit={(event) => {
+        if (
+          !window.confirm(
+            `Delete the account for ${label}?\n\nThis permanently removes the user and all their data (payments, devices, access records, history) from the database. This cannot be undone.`,
+          )
+        ) {
+          event.preventDefault()
+        }
+      }}
+    >
+      <input type="hidden" name="userId" value={String(userId)} />
+      <button
+        type="submit"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7c9c9] px-3 py-2 text-xs font-bold text-[#b33636] hover:bg-[#fdeeee] transition"
+      >
+        <Trash2 className="size-3.5" /> Delete
+      </button>
+    </form>
+  )
+}
 
 interface UsersTableProps {
   users: AppUser[]
@@ -208,6 +236,7 @@ export function UsersTable({
                             restricted={restricted}
                             flagged={flagged}
                           />
+                          <DeleteUserButton userId={user.id} name={user.name} />
                           {user.paymentStatus === 'pending' && (
                             <Link href="/admin/payments" className="text-xs font-bold text-[#087f78] underline underline-offset-4">
                               Review payment

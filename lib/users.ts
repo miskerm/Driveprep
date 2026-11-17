@@ -125,6 +125,31 @@ export async function listUsers(): Promise<AppUser[]> {
   })
 }
 
+export async function deleteUser(id: number): Promise<{ ok: boolean; message: string }> {
+  await ensureSchema()
+
+  const target = await getUserById(id)
+  if (!target) return { ok: false, message: 'That account no longer exists.' }
+  if (target.role === 'admin') {
+    return { ok: false, message: 'Admin accounts cannot be deleted.' }
+  }
+
+  const key = accountKey(target)
+
+  await db().batch(
+    [
+      { sql: 'DELETE FROM account_events WHERE user_id = ? OR actor_id = ?', args: [id, id] },
+      { sql: 'DELETE FROM payments WHERE user_id = ?', args: [id] },
+      { sql: 'DELETE FROM learner_devices WHERE email = ?', args: [key] },
+      { sql: 'DELETE FROM learner_access WHERE email = ?', args: [key] },
+      { sql: 'DELETE FROM users WHERE id = ?', args: [id] },
+    ],
+    'write',
+  )
+
+  return { ok: true, message: `Account ${target.name} (user #${id}) deleted completely.` }
+}
+
 export async function getDeviceCountsByAccount(): Promise<Map<string, number>> {
   await ensureSchema()
   const result = await db().execute(

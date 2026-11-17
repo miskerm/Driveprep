@@ -8,6 +8,7 @@ import { getPendingPayments } from '@/lib/payments'
 import { listAccountEvents } from '@/lib/account-admin'
 import { DEVICE_FLAG_THRESHOLD } from '@/lib/access-types'
 import { UsersTable } from '@/components/admin/users-table'
+import { ClearHistoryButton } from '@/components/admin/clear-history-button'
 import type { PaymentStatus, AccountStatus } from '@/lib/account-types'
 
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,8 @@ const resultMessages: Record<string, { tone: 'success' | 'error' | 'warning'; me
   'premium-restricted': { tone: 'warning', message: 'Premium access was restricted for that account.' },
   'premium-restored': { tone: 'success', message: 'Premium access was restored for that account.' },
   error: { tone: 'error', message: 'The account could not be updated. Check the server logs and try again.' },
+  deleted: { tone: 'success', message: 'Account deleted completely.' },
+  'history-cleared': { tone: 'success', message: 'Account & payment status history cleared.' },
 }
 
 export default async function AdminUsersPage({
@@ -148,6 +151,7 @@ export default async function AdminUsersPage({
           <Link href="/admin/payments" className="text-sm font-bold text-[#087f78] underline underline-offset-4">
             Open payment history
           </Link>
+          <ClearHistoryButton />
         </div>
 
         {events.length === 0 ? (
