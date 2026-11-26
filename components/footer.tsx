@@ -53,7 +53,7 @@ export function Footer() {
                 <Mail className="size-5 shrink-0 text-[#087f78]" />
                 <div>
                   <div className="text-sm text-[#94a3b8]">Email</div>
-                  <div className="text-sm font-semibold text-[#f8fafc]">mgwfalconengineering2022@gmail.com</div>
+                  <div className="text-sm font-semibold text-[#f8fafc]"></div>
                 </div>
               </li>
             </ul>
