@@ -66,10 +66,10 @@ export function Footer() {
               <a href="https://www.facebook.com/share/1DwBtCjUMM/?mibextid=wwXIfr" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Website">
                 <FaFacebook className="size-5" />
               </a>
-              <a href="https://mgwfalconengineering@gmail.com" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Messenger">
+              <a href="#" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="Messenger">
                 <MdEmail className="size-5" />
               </a>
-              <a href="https://t.me/ATDA2026" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="WhatsApp">
+              <a href="#" className="rounded-lg border border-[#334155] bg-[#1e293b] p-2.5 text-[#94a3b8] hover:bg-[#087f78] hover:text-white transition-colors" aria-label="WhatsApp">
                 <FaTelegram className="size-5" />
               </a>
             </div>
