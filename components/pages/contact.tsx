@@ -44,7 +44,7 @@ export function ContactPage() {
               <Mail className="size-6 text-[#087f78]" />
               <h3 className="text-lg font-extrabold">Email</h3>
             </div>
-            <p className="text-lg font-semibold text-[#142238] mb-1">mgwfalconengineering2022@gmail.com</p>
+            <p className="text-lg font-semibold text-[#142238] mb-1"></p>
             <p className="text-sm text-[#607477]">
               We typically respond within 24 hours.
             </p>
@@ -56,9 +56,9 @@ export function ContactPage() {
               <ShieldCheck className="size-6 text-[#087f78]" />
               <h3 className="text-lg font-extrabold">Account info</h3>
             </div>
-            <p className="text-lg font-semibold text-[#142238] mb-1">Achenef Tarekegn</p>
-            <p className="text-lg font-semibold text-[#142238] mb-2">CBE : 1000288873357</p>
-            <p className="text-lg font-semibold text-[#142238] mb-2">Tele-Birr: +251905991745</p>
+            <p className="text-lg font-semibold text-[#142238] mb-1"></p>
+            <p className="text-lg font-semibold text-[#142238] mb-2"></p>
+            <p className="text-lg font-semibold text-[#142238] mb-2"></p>
             <p className="text-sm text-[#607477]">
               Upgrade your account to unlock all study materials, practice questions, and mock tests.
             </p>
